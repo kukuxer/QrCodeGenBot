@@ -34,30 +34,45 @@ public class QRCodeTgBot extends TelegramLongPollingBot {
     @SneakyThrows
     public void onUpdateReceived(Update update) {
         TgUser user = userService.getByChatIdOrElseCreateNew(update);
+
+        if (isCommand(update)) {
+            String text = update.getMessage().getText();
+            processCommands(user, text);
+        }
+
+
+        InputFile qrFile = qrCodeGenerator.getQRCodeImageFile(messageText, Color.RED, Color.BLACK);
+        SendPhoto sendPhoto = new SendPhoto();
+        sendPhoto.setChatId(chatId.toString());
+        sendPhoto.setPhoto(qrFile);
+        execute(sendPhoto);
+
+    }
+
+
+    private boolean isCommand(Update update) {
         if (update.hasMessage() && update.getMessage().hasText()) {
             String text = update.getMessage().getText();
-            if(text.startsWith("/")){
-                switch (text){
-                    case "/start" -> sendMessageToUser(
-                            user,
-                            "Hello, welcome to the bot, that will help you to create your qr codes!"
-                    );
-                }
-            }else {
-                String messageText = update.getMessage().getText();
-                Long chatId = update.getMessage().getChatId();
-
-
-                InputFile qrFile = qrCodeGenerator.getQRCodeImageFile(messageText, Color.RED, Color.BLACK);
-                SendPhoto sendPhoto = new SendPhoto();
-                sendPhoto.setChatId(chatId.toString());
-                sendPhoto.setPhoto(qrFile);
-                execute(sendPhoto);
+            if (text.startsWith("/")) {
+                return true;
             }
         }
+        return false;
     }
+
+    private void processCommands(TgUser user, String text) {
+        switch (text) {
+            case "/start" -> sendMessageToUser(
+                    user,
+                    "Hello, welcome to the bot, that will help you to create your qr codes!"
+            );
+
+        }
+
+    }
+
     @SneakyThrows
-    public void sendMessageToUser(TgUser user, String text){
+    public void sendMessageToUser(TgUser user, String text) {
         execute(SendMessage.builder()
                 .chatId(user.getChatId().toString())
                 .text(text)

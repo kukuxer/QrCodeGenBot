@@ -1,9 +1,12 @@
 package com.kukuxer.tgBotQrCode;
 
+import com.kukuxer.tgBotQrCode.user.TgUser;
+import com.kukuxer.tgBotQrCode.user.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.Update;
@@ -14,6 +17,8 @@ import java.awt.*;
 @RequiredArgsConstructor
 public class QRCodeTgBot extends TelegramLongPollingBot {
     private final TelegramBotConfig telegramBotConfig;
+    private final QRCodeGenerator qrCodeGenerator;
+    private final UserService userService;
 
     @Override
     public String getBotUsername() {
@@ -28,16 +33,38 @@ public class QRCodeTgBot extends TelegramLongPollingBot {
     @Override
     @SneakyThrows
     public void onUpdateReceived(Update update) {
+        TgUser user = userService.getByChatIdOrElseCreateNew(update);
         if (update.hasMessage() && update.getMessage().hasText()) {
-            String messageText = update.getMessage().getText();
-            Long chatId = update.getMessage().getChatId();
+            String text = update.getMessage().getText();
+            if(text.startsWith("/")){
+                switch (text){
+                    case "/start" -> sendMessageToUser(
+                            user,
+                            "Hello, welcome to the bot, that will help you to create your qr codes!"
+                    );
+                }
+            }else {
+                String messageText = update.getMessage().getText();
+                Long chatId = update.getMessage().getChatId();
 
 
-            InputFile qrFile = new QRCodeGenerator().getQRCodeImageFile(messageText, Color.BLUE,Color.CYAN);
-            SendPhoto sendPhoto = new SendPhoto();
-            sendPhoto.setChatId(chatId.toString());
-            sendPhoto.setPhoto(qrFile);
-            execute(sendPhoto);
+                InputFile qrFile = qrCodeGenerator.getQRCodeImageFile(messageText, Color.RED, Color.BLACK);
+                SendPhoto sendPhoto = new SendPhoto();
+                sendPhoto.setChatId(chatId.toString());
+                sendPhoto.setPhoto(qrFile);
+                execute(sendPhoto);
+            }
         }
     }
+    @SneakyThrows
+    public void sendMessageToUser(TgUser user, String text){
+        execute(SendMessage.builder()
+                .chatId(user.getChatId().toString())
+                .text(text)
+                .build()
+        );
+    }
+
+
 }
+

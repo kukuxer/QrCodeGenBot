@@ -1,0 +1,28 @@
+version: '3.8'
+
+volumes:
+  postgres_db:
+    driver: local
+
+networks:
+  qr_code:
+    driver: bridge
+
+services:
+  postgres_db:
+    container_name: qr_postgres
+    image: postgres:15.1-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_DB: tgQRBot
+      POSTGRES_USERNAME: postgres
+      POSTGRES_PASSWORD: postgres
+      PGDATA: /var/lib/postgresql/data
+    volumes:
+      - postgres_db:/var/lib/postgresql/data
+    ports:
+      - "5436:5432"
+    networks:
+      - qr_code
+    restart: unless-stopped
+

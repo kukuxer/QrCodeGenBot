@@ -1,5 +1,6 @@
 package com.kukuxer.tgBotQrCode.qrcode;
 
+import com.kukuxer.tgBotQrCode.qrCodeVisitor.QrCodeVisitor;
 import com.kukuxer.tgBotQrCode.user.TgUser;
 import jakarta.persistence.*;
 import lombok.*;
@@ -18,6 +19,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @Getter
 @Setter
+@Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class QrCode {
 
@@ -39,6 +41,7 @@ public class QrCode {
     LocalDateTime expirationTime;
     @JoinColumn(name = "is_active")
     Boolean isActive;
+    Boolean isCreated;
     Integer qrCodeScanCount;
     @OneToMany
     @JoinColumn(name = "qr_code_visitor_id")

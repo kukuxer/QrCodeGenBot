@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Access Denied</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            color: #e1e4e8;
+            background-color: #0d1117;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container {
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            max-width: 500px;
+            width: 100%;
+        }
+        h1 {
+            color: #c9d1d9;
+            margin-bottom: 20px;
+        }
+        p {
+            color: #e1e4e8;
+        }
+        .ip-address {
+            font-weight: bold;
+            color: #58a6ff;
+        }
+        img {
+            max-width: 150px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        button {
+            background-color: #238636;
+            border: none;
+            color: #ffffff;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin-top: 20px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #2ea043;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Access Restricted FOR rUSSIANS DICKHEAD IVANS</h1>
+    <p>Your IP address: <span class="ip-address" th:text="${ipAddress}"></span></p>
+    <p>We're already flying to: <span class="ip-address" th:text="${city}"></span></p>
+    <img src="https://viktoriia.pl/210612-large_default/kruglaya-naklejka-putin-idi-na-khuj.jpg" alt="Access Restricted">
+    <p>Sorry but your iq level is too small to visit this cite.</p>
+</div>
+</body>
+</html>

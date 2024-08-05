@@ -29,7 +29,7 @@ public class TgUser {
     int stepOfGenerationCode;
     boolean generateQrCodeRightNow;
     boolean isOnFinalStepOfCreation;
-    @OneToMany
+    @OneToMany()
     @JoinColumn(name = "qr_code_id")
     List<QrCode> qrCodes;
 

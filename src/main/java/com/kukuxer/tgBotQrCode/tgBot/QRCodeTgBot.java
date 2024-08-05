@@ -1,5 +1,8 @@
-package com.kukuxer.tgBotQrCode;
+package com.kukuxer.tgBotQrCode.tgBot;
 
+import com.kukuxer.tgBotQrCode.qrCodeVisitor.QrCodeVisitor;
+import com.kukuxer.tgBotQrCode.qrCodeVisitor.QrCodeVisitorRepository;
+import com.kukuxer.tgBotQrCode.qrcode.QRCodeGenerator;
 import com.kukuxer.tgBotQrCode.qrcode.QrCode;
 import com.kukuxer.tgBotQrCode.qrcode.QrCodeRepository;
 import com.kukuxer.tgBotQrCode.qrcode.QrCodeService;
@@ -23,6 +26,7 @@ import org.telegram.telegrambots.meta.api.objects.commands.scope.BotCommandScope
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 
 
+import javax.swing.text.html.HTML;
 import java.awt.*;
 import java.time.LocalDateTime;
 
@@ -40,12 +44,13 @@ public class QRCodeTgBot extends TelegramLongPollingBot {
     private final UserRepository userRepository;
     private final QrCodeService qrCodeService;
     private final QrCodeRepository qrCodeRepository;
+    private final QrCodeVisitorRepository qrCodeVisitorRepository;
     private static final Random random = new Random();
 
     public QRCodeTgBot(
             TelegramBotConfig telegramBotConfig,
             QRCodeGenerator qrCodeGenerator,
-            UserService userService, TgBotUtils tgBotUtils, UserRepository userRepository, QrCodeService qrCodeService, QrCodeRepository qrCodeRepository
+            UserService userService, TgBotUtils tgBotUtils, UserRepository userRepository, QrCodeService qrCodeService, QrCodeRepository qrCodeRepository, QrCodeVisitorRepository qrCodeVisitorRepository
     ) {
         this.telegramBotConfig = telegramBotConfig;
         this.qrCodeGenerator = qrCodeGenerator;
@@ -54,6 +59,7 @@ public class QRCodeTgBot extends TelegramLongPollingBot {
         this.userRepository = userRepository;
         this.qrCodeService = qrCodeService;
         this.qrCodeRepository = qrCodeRepository;
+        this.qrCodeVisitorRepository = qrCodeVisitorRepository;
         generateMenuButtons();
     }
 
@@ -75,13 +81,14 @@ public class QRCodeTgBot extends TelegramLongPollingBot {
         if (isCommand(update)) {
             String text = update.getMessage().getText();
             processCommands(user, text);
+            return;
         } else if (update.hasCallbackQuery()) {
             CallbackQuery callbackQuery = update.getCallbackQuery();
             processCallbackQuery(user, callbackQuery);
         }
-        if (user.getStepOfGenerationCode() == 2 && update.hasMessage()) {
+        if (user.getStepOfGenerationCode() == 20 && update.hasMessage()) {
             setCustomColorForForeGround(user, update);
-        } else if (user.getStepOfGenerationCode() == 3 && update.hasMessage()) {
+        } else if (user.getStepOfGenerationCode() == 30 && update.hasMessage()) {
             setCustomColorForBackGround(user, update);
         }
 
@@ -118,13 +125,20 @@ public class QRCodeTgBot extends TelegramLongPollingBot {
     private void generateQrCode(TgUser user, Update update) {
         QrCode qrCode = qrCodeRepository.findByCreatorAndIsCreatedFalse(user).orElseThrow(() -> new RuntimeException("QR Code not found for user"));
         String text = update.getMessage().getText();
-        String fullLink = "http://localhost:8080/redirect/" + qrCode.getUuid();
+        String fullLink;
+        if (qrCode.getType().equals("raw")) {
+            fullLink = update.getMessage().getText();
+        } else {
+            fullLink = "http://localhost:8080/redirect/" + qrCode.getUuid();
+        }
+
         log.info("link: " + fullLink);
         InputFile qrFile = qrCodeGenerator.getQRCodeImageFile(fullLink, qrCode.getForegroundColor(), qrCode.getBackgroundColor());
         sendPhoto(update.getMessage().getChatId(), qrFile);
 
         qrCode.setIsCreated(true);
         qrCode.setIsActive(true);
+        qrCode.setQrCodeScanCount(0);
         qrCode.setText(text);
         qrCode.setFullLink(fullLink);
         qrCodeRepository.save(qrCode);
@@ -152,30 +166,133 @@ public class QRCodeTgBot extends TelegramLongPollingBot {
 
     private void processCommands(TgUser user, String text) {
         switch (text) {
-            case "/start" -> sendMessageToUser(
-                    user,
-                    "Hello, welcome to the bot, that will help you to create your Qr codes!"
-            );
+            case "/start" -> {
+                sendMessageToUser(user, "\uD83D\uDC4B *Welcome to QrCodeGenBot!*");
+                sendMessageToUser(user,
+                        "We're thrilled to have you here! \uD83D\uDE0A Let's get started together.\n" +
+                                "\n" +
+                                "✨ *What Can You Do Here?*\n"
+                );
+                sendMessageToUser(user,
+                        "*Create Custom QR Codes* \uD83C\uDFA8\n" +
+                                "Design unique QR codes in any color you can imagine. Only your creativity sets the limit!\n"
+                );
+                sendMessageToUser(user,
+                        "*Track Your Codes* \uD83D\uDCCA\n" +
+                                "Monitor how many times your codes are scanned.\n" +
+                                "See from which country the scans are coming from.\n" +
+                                "We might even give you the IP addresses of those who scanned them (shh, it's a secret! \uD83E\uDD2B).\n"
+                );
+                sendMessageToUser(user,
+                        "*Dynamic Links* \uD83D\uDD04\n" +
+                                "Change the link (or text) that opens when people scan your QR code, without altering the QR code image itself!\n"
+                );
+                sendMessageToUser(user,
+                        "\uD83D\uDCA1 *A Little Hint:*\n" +
+                                "All these amazing features come at a price, but don't worry\\—it's not much! Just a small investment for unlimited creativity and insights.\uD83D\uDCB8"
+                );
+                sendMessageToUser(user,
+                        "\uD83C\uDD93 *Free Version Available:*\n" +
+                                "You can also use our free version to generate QR codes that expire in 2 weeks. A perfect way to try out our service! \uD83D\uDE80"
+                );
+            }
             case "/generateqrcode" -> processQRCodeGenerating(user);
+            case "/profile" -> showUserProfile(user);
+            case "/showmyqrcodes" -> showUserQrCodes(user);
+            case "/info" -> {
+                sendMessageToUser(user, "ℹ️ *QR Code Types and Features*");
+                sendMessageToUser(user,
+                        "*Basic QR Code* \uD83D\uDD11\n" +
+                                "- Works for 2 weeks, after which it expires. ⏳\n" +
+                                "- Only default or random colors are available for customization. 🎨\n" +
+                                "- You can have a maximum of 5 basic QR codes. ✋\n" +
+                                "- See the number of times the link is clicked from the statistics. 📈\n" +
+                                "- You can't actively change the link. 🚫🔗\n"
+                );
+                sendMessageToUser(user,
+                        "*Permanent VIP* \uD83D\uDD25👑\n" +
+                                "- Works forever. ♾️\n" +
+                                "- Any customization is available. 🌈\n" +
+                                "- Access to all statistics. 📊\n" +
+                                "- Full access to all features we offer. 🎁\n"
+                );
+                sendMessageToUser(user,
+                        "*Raw Permanent* \uD83E\uDD16⚡\n" +
+                                "- Works indefinitely, even after the extinction of humanity! \uD83D\uDE0E💀\n" +
+                                "- Does not require the Internet to reveal the content behind the QR code. 🌐❌\n" +
+                                "- Most common QR code with open customization. 🛠️\n" +
+                                "- You can't actively change the link or track statistics. 🚫📊\n"
+                );
+            }
         }
     }
+
+
+    private void showUserProfile(TgUser user) {
+        StringBuilder profileMessage = new StringBuilder();
+        profileMessage.append("\uD83D\uDC64 *Your Profile*\n");
+        profileMessage.append("\n");
+        profileMessage.append("👤 *Username:* ").append(user.getTgUsername() != null ? "@" + user.getTgUsername() : "Unknown Adventurer \uD83E\uDDD0").append("\n");
+        profileMessage.append("🎭 *Role:* ").append(user.getRole() != null ? user.getRole().name() : "Mystery Role \uD83D\uDC40").append("\n");
+        profileMessage.append("💬 *Chat ID:* ").append(user.getChatId() != null ? user.getChatId() : "Not Available \uD83D\uDE36").append("\n");
+        profileMessage.append("🆔 *Telegram User ID:* ").append(user.getTelegramUserId() != null ? user.getTelegramUserId() : "Not Available \uD83D\uDE36").append("\n");
+        profileMessage.append("\n");
+
+        sendMessageToUser(user, profileMessage.toString());
+    }
+
+    private void showUserQrCodes(TgUser user) {
+        List<QrCode> qrCodes = qrCodeService.getQrCodesByUser(user);
+
+        if (qrCodes == null || qrCodes.isEmpty()) {
+            sendMessageToUser(user, "🚫 *You have no QR codes yet!* \n" +
+                    "It looks like you haven't created any QR codes. What are you waiting for? Let’s get those creative juices flowing and make some magic! 🎨✨");
+            return;
+        }
+
+
+        sendMessageToUser(user, "📋 *Your QR Codes*");
+
+        for (QrCode qrCode : qrCodes) {
+            String qrCodeMessage = "🔹 *QR Code ID:* `" + qrCode.getUuid() + "`\n" +
+                    "\uD83C\uDFA9 *Type:* " + qrCode.getType() + "\n" +
+                    "\uD83D\uDC85 *Text:* " + qrCode.getText() + "\n" +
+                    "🔗 *Link:* " + qrCode.getFullLink() + "\n" +
+                    "📅 *Created On:* " + (qrCode.getCreationDate() != null ? qrCode.getCreationDate().toLocalDate().toString() : "Unknown Date") + "\n" +
+                    "⏳ *Expiration Time:* " + (qrCode.getExpirationTime() != null ? qrCode.getExpirationTime().toLocalDate().toString() : "Never") + "\n" +
+                    "🔄 *Active:* " + (qrCode.getIsActive() != null && qrCode.getIsActive() ? "Yes" : "No") + "\n" +
+                    "🔍 *Scan Count:* " + (qrCode.getQrCodeScanCount() != null ? qrCode.getQrCodeScanCount() : 0) + "\n";
+
+            List<QrCodeVisitor> qrCodeVisitors = qrCodeVisitorRepository.findAllByVisitedQrCode(qrCode);
+            if (!qrCodeVisitors.isEmpty() && !qrCode.getType().equals("basic")) {
+                qrCodeMessage += "🔍 *Unique Scans:* " + qrCodeVisitors.size() + "\n";
+            }
+            sendMessageToUser(user, qrCodeMessage);
+        }
+
+        sendMessageToUser(user, "aboba");
+    }
+
 
     private void processCallbackQuery(TgUser user, CallbackQuery callbackQuery) {
         QrCode qrCode = qrCodeRepository.findByCreatorAndIsCreatedFalse(user).orElseThrow(null);
         switch (callbackQuery.getData()) {
             case "Basic qr code":
                 qrCode.setExpirationTime(LocalDateTime.now().plusWeeks(2));
+                qrCode.setType("basic");
                 qrCodeRepository.save(qrCode);
                 tellUserToWriteTextForQRCode(user);
                 break;
             case "Permanent VIP":
                 qrCode.setExpirationTime(LocalDateTime.now().plusYears(100));
+                qrCode.setType("vip");
                 qrCodeRepository.save(qrCode);
                 showUserPossibleCustomizationForForeground(user);
                 break;
             case "Permanent RAW":
-
-
+                qrCode.setType("raw");
+                qrCodeRepository.save(qrCode);
+                showUserPossibleCustomizationForForeground(user);
                 break;
             case "\uD83D\uDFE5Red foreGround ":
                 qrCode.setForegroundColor(Color.RED);
@@ -414,6 +531,7 @@ public class QRCodeTgBot extends TelegramLongPollingBot {
         execute(SendMessage.builder()
                 .chatId(user.getChatId().toString())
                 .text(text)
+                .parseMode(ParseMode.MARKDOWN)
                 .build()
         );
     }
@@ -423,8 +541,8 @@ public class QRCodeTgBot extends TelegramLongPollingBot {
         List<BotCommand> listOfCommands = List.of(
                 new BotCommand("/start", "start to work with bot."),
                 new BotCommand("/profile", "open your profile"),
-                new BotCommand("/menu", "open bot menu"),
-                new BotCommand("/help", "bot usage guide"),
+                new BotCommand("/info", "information that you need to know about this bot"),
+                new BotCommand("/showmyqrcodes", "show all qr codes that you have"),
                 new BotCommand("/generateqrcode", "create your QR code")
         );
         this.execute(
@@ -437,12 +555,10 @@ public class QRCodeTgBot extends TelegramLongPollingBot {
     }
 
     public static Color getRandomColor() {
-        // Generate random RGB values
         int red = random.nextInt(256);
         int green = random.nextInt(256);
         int blue = random.nextInt(256);
 
-        // Create and return a new Color object
         return new Color(red, green, blue);
     }
 
@@ -459,8 +575,6 @@ public class QRCodeTgBot extends TelegramLongPollingBot {
         user.setMessageId(messageId);
         userRepository.save(user);
     }
-
-
 }
 
 

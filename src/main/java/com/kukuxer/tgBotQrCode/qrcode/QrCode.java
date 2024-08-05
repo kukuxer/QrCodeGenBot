@@ -34,6 +34,7 @@ public class QrCode {
     TgUser creator;
     String foregroundColor;
     String backgroundColor;
+    String type;
     @CreationTimestamp
     @JoinColumn(name = "creation_date")
     LocalDateTime creationDate;

@@ -4,8 +4,6 @@ import com.kukuxer.tgBotQrCode.qrCodeVisitor.QrCodeVisitor;
 import com.kukuxer.tgBotQrCode.qrCodeVisitor.QrCodeVisitorService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -14,8 +12,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.UUID;
 

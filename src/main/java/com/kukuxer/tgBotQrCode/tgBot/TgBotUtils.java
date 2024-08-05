@@ -1,4 +1,4 @@
-package com.kukuxer.tgBotQrCode;
+package com.kukuxer.tgBotQrCode.tgBot;
 
 import com.kukuxer.tgBotQrCode.user.TgUser;
 import lombok.SneakyThrows;

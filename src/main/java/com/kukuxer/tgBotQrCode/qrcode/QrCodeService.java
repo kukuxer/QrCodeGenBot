@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -39,5 +40,9 @@ public class QrCodeService {
 
         userRepository.save(user);
 
+    }
+
+    public List<QrCode> getQrCodesByUser(TgUser user) {
+        return qrCodeRepository.findAllByCreator(user);
     }
 }

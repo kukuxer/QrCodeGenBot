@@ -1,4 +1,4 @@
-package com.kukuxer.tgBotQrCode;
+package com.kukuxer.tgBotQrCode.qrcode;
 
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.EncodeHintType;

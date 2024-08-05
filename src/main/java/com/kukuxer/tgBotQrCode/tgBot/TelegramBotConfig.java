@@ -1,5 +1,6 @@
-package com.kukuxer.tgBotQrCode;
+package com.kukuxer.tgBotQrCode.tgBot;
 
+import com.kukuxer.tgBotQrCode.tgBot.QRCodeTgBot;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import org.springframework.beans.factory.annotation.Value;

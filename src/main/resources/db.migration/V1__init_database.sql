@@ -5,12 +5,10 @@ CREATE TABLE IF NOT EXISTS tg_user
     telegram_user_id             VARCHAR(255) NOT NULL,
     tg_username                  VARCHAR(255) NOT NULL,
     role                         VARCHAR(32)  NOT NULL,
-    qr_code_id UUID,
     message_id                   INT,
     step_of_generation_code      int,
     generate_qr_code_right_now   boolean,
-    is_on_final_step_of_creation boolean,
-    CONSTRAINT fk_tg_user_qr_code FOREIGN KEY (qr_code_id) REFERENCES qr_code (uuid)
+    is_on_final_step_of_creation boolean
 );
 
 CREATE TABLE IF NOT EXISTS qr_code
@@ -22,13 +20,14 @@ CREATE TABLE IF NOT EXISTS qr_code
     CONSTRAINT fk_qr_code_tg_user FOREIGN KEY (creator_id) references tg_user (id),
     foregroundColor    VARCHAR(7),
     backgroundColor    VARCHAR(7),
+    type               VARCHAR(55),
     creation_date      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     expiration_time    TIMESTAMP,
     is_active          BOOLEAN,
     is_created         BOOLEAN,
     qr_code_scan_count INT,
-    qr_code_visitor_id INTEGER,
-    CONSTRAINT fk_qr_code_qr_code_visitor FOREIGN KEY (qr_code_visitor_id) REFERENCES qr_code_visitor (id)
+
+    CONSTRAINT fk_qr_code_creator FOREIGN KEY (creator_id) REFERENCES tg_user (id)
 );
 
 CREATE TABLE IF NOT EXISTS qr_code_visitor
@@ -37,6 +36,7 @@ CREATE TABLE IF NOT EXISTS qr_code_visitor
     ip      VARCHAR(255),
     country VARCHAR(255),
     city    VARCHAR(255),
+    visited_time    TIMESTAMP,
     visited_qr_code_id UUID,
     CONSTRAINT fk_qr_code_visitor_qr_code FOREIGN KEY (visited_qr_code_id) REFERENCES qr_code (uuid)
 )

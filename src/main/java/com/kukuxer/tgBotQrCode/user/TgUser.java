@@ -26,6 +26,7 @@ public class TgUser {
     @Enumerated(EnumType.STRING)
     Role role;
     Integer messageId;
+    int stepOfGenerationCode;
     boolean generateQrCodeRightNow;
     boolean isOnFinalStepOfCreation;
     @OneToMany

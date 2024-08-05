@@ -42,6 +42,9 @@ public class UserService {
                 .tgUsername(username)
                 .telegramUserId(message.getFrom().getId())
                 .qrCodes(new ArrayList<>())
+                .generateQrCodeRightNow(false)
+                .isOnFinalStepOfCreation(false)
+                .stepOfGenerationCode(0)
                 .role(Role.USER)
                 .build();
 

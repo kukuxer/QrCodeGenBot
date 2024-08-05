@@ -16,6 +16,9 @@ public class QrCodeService {
 
     @Transactional
     public void generateQrCode(TgUser user) {
+        if (user.isGenerateQrCodeRightNow()) {
+            throw new RuntimeException("aboba");
+        }
 
         user = userRepository.findById(user.getId())
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
@@ -30,7 +33,7 @@ public class QrCodeService {
                 .qrCodeScanCount(0)
                 .build();
         qrCodeRepository.save(qrCode);
-
+        user.setStepOfGenerationCode(1);
         user.getQrCodes().add(qrCode);
         user.setGenerateQrCodeRightNow(true);
 

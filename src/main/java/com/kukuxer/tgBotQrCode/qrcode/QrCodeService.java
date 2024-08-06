@@ -12,11 +12,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
+import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -147,6 +149,18 @@ public class QrCodeService {
 
         } catch (Exception e) {
             qrCodeTgBot.sendMessageToUser(user, "no QR codes exists by this id");
+        }
+    }
+
+    public void changeQrCodeLink(String data) {
+        try{
+            QrCode qrCode = qrCodeRepository.findById(UUID.fromString(data)).orElseThrow();
+            TgUser creator = qrCode.getCreator();
+            creator.setQrCodeIdToChange(qrCode.getUuid());
+            userRepository.save(creator);
+            qrCodeTgBot.sendMessageToUser(creator,"Please provide new link for your qr code.");
+        }catch (Exception e){
+            log.error("sasi");
         }
     }
 }

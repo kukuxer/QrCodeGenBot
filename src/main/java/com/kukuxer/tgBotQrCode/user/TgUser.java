@@ -6,6 +6,7 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import java.util.List;
+import java.util.UUID;
 
 @Entity
 @Table(name = "tg_user")
@@ -33,9 +34,10 @@ public class TgUser {
     boolean wantToChangeLink;
     boolean wantToDelete;
     boolean wantToCheckVisitors;
-    @OneToMany()
+    @OneToMany(fetch = FetchType.EAGER)
     @JoinColumn(name = "qr_code_id")
     List<QrCode> qrCodes;
+    UUID qrCodeIdToChange;
 
 
 }

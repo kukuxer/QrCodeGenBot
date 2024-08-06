@@ -29,6 +29,8 @@ import java.time.LocalDateTime;
 
 import java.util.List;
 
+import static java.util.Objects.isNull;
+
 
 @Component
 @Slf4j
@@ -81,6 +83,22 @@ public class QRCodeTgBot extends TelegramLongPollingBot {
     public void onUpdateReceived(Update update) {
         TgUser user = userService.getByChatIdOrElseCreateNew(update);
         QrCodeService qrCodeService = getQrCodeService();
+
+        if(!isNull(user.getQrCodeIdToChange())){
+            if(update.hasMessage()){
+                QrCode qrCode = qrCodeRepository.findById(user.getQrCodeIdToChange()).orElseThrow();
+                qrCode.setText(update.getMessage().getText());
+                qrCodeRepository.save(qrCode);
+                return;
+            }
+        }
+
+        if(update.hasCallbackQuery()){
+            if(user.isWantToChangeLink()){
+                qrCodeService.changeQrCodeLink(update.getCallbackQuery().getData());
+                return;
+            }
+        }
 
         if (update.hasMessage()) {
             if (user.isWantToDelete()) {

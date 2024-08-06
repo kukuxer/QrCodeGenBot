@@ -13,7 +13,9 @@ import org.telegram.telegrambots.meta.api.methods.ParseMode;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Component
@@ -331,11 +333,10 @@ public class MessagesForUser {
             EditMessageText editMessage = new EditMessageText();
             editMessage.setChatId(user.getChatId());
             editMessage.setMessageId(messageId);
-            InlineKeyboardMarkup markup = tgBotUtils.createMarkup(List.of("⬅️ back"));
-            editMessage.setReplyMarkup(markup);
             editMessage.setParseMode(ParseMode.MARKDOWN);
-            editMessage.setText("\uD83D\uDD04 Please send the *ID* of the QR code you want to change Link. \n" +
-                    "You can find the QR code ID in your QR code list and copy the ID just by clicking it! 📋🔗");
+            InlineKeyboardMarkup markupForQrCode = tgBotUtils.createMarkupForQrCode(user);
+            editMessage.setReplyMarkup(markupForQrCode);
+            editMessage.setText("Choose QR code which you want to change link");
             tgBot.execute(editMessage);
         }
     }

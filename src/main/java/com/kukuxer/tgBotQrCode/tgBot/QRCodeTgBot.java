@@ -24,12 +24,15 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
 import org.telegram.telegrambots.meta.api.objects.commands.scope.BotCommandScopeDefault;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
+import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
+import org.telegram.telegrambots.meta.exceptions.TelegramApiValidationException;
 
 
 import java.awt.*;
 import java.time.LocalDateTime;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 
 
@@ -144,6 +147,7 @@ public class QRCodeTgBot extends TelegramLongPollingBot {
         user.setStepOfGenerationCode(10);
         user.setOnFinalStepOfCreation(false);
         user.setGenerateQrCodeRightNow(false);
+        user.setMessageId(null);
         userRepository.save(user);
     }
 
@@ -266,7 +270,7 @@ public class QRCodeTgBot extends TelegramLongPollingBot {
         sendMessageToUser(user, "📋 *Your QR Codes*");
 
         for (QrCode qrCode : qrCodes) {
-            if (qrCode.getType() == null) {
+            if (!qrCode.getIsCreated()) {
                 continue;
             }
             String qrCodeMessage = "🔹 *QR Code ID:* `" + qrCode.getUuid() + "`\n" +
@@ -296,10 +300,10 @@ public class QRCodeTgBot extends TelegramLongPollingBot {
                 qrCode.setExpirationTime(LocalDateTime.now().plusWeeks(2));
                 qrCode.setType("basic");
                 qrCodeRepository.save(qrCode);
-                tellUserToWriteTextForQRCode(user);
+                showUserCustomizationForBasicQRCode(user);
                 break;
             case "Permanent VIP":
-                qrCode.setExpirationTime(LocalDateTime.now().plusYears(100));
+                qrCode.setExpirationTime(LocalDateTime.now().plusYears(1000));
                 qrCode.setType("vip");
                 qrCodeRepository.save(qrCode);
                 showUserPossibleCustomizationForForeground(user);
@@ -415,6 +419,12 @@ public class QRCodeTgBot extends TelegramLongPollingBot {
                 qrCodeRepository.save(qrCode);
                 tellUserToWriteTextForQRCode(user);
                 break;
+            case "\uD83C\uDF08 Choose Random colors":
+                qrCode.setBackgroundColor(getRandomColor());
+                qrCode.setForegroundColor(getRandomColor());
+                qrCodeRepository.save(qrCode);
+                tellUserToWriteTextForQRCode(user);
+                break;
             case "⬅️ back":
                 processBackButton(user);
                 break;
@@ -424,8 +434,42 @@ public class QRCodeTgBot extends TelegramLongPollingBot {
         }
     }
 
+    @SneakyThrows
+    private void showUserCustomizationForBasicQRCode(TgUser user) {
+        Integer messageId = user.getMessageId();
+        if (messageId != null) {
+            EditMessageText editMessage = new EditMessageText();
+            editMessage.setChatId(user.getChatId());
+            editMessage.setMessageId(messageId);
+            editMessage.setParseMode(ParseMode.MARKDOWNV2);
+            editMessage.setText("Choose colors for QR code: ");
+            InlineKeyboardMarkup markup = tgBotUtils.createMarkup(
+                    List.of(
+                            "\uD83D\uDD33" + "Choose default",
+                            "\uD83C\uDF08 Choose Random colors",
+                            "⬅️ back"
+
+                    ));
+            editMessage.setReplyMarkup(markup);
+            execute(editMessage);
+        }
+        user.setStepOfGenerationCode(2);
+        userRepository.save(user);
+    }
+
     private void processBackButton(TgUser user) {
+        QrCode notCreatedQrCode = qrCodeRepository.findByCreatorAndIsCreatedFalse(user)
+                .orElseThrow(
+                        () -> new RuntimeException("Qr code by provided user wasn't found")
+                );
+        if(notCreatedQrCode.getType().equals("basic")){
+            if(user.getStepOfGenerationCode()==4){
+                showUserCustomizationForBasicQRCode(user);
+                return;
+            }
+        }
         switch (user.getStepOfGenerationCode()) {
+            case 2 -> showOptionsToChooseType(user);
             case 20, 3 -> showUserPossibleCustomizationForForeground(user);
             case 30, 4 -> showUserPossibleCustomizationForBackGround(user);
         }
@@ -453,7 +497,8 @@ public class QRCodeTgBot extends TelegramLongPollingBot {
                             "⬜️" + "White foreGround ",
                             "\uD83D\uDD33" + "Choose default",
                             "Choose Random color for foreGround",
-                            "Create your own color for foreGround"
+                            "Create your own color for foreGround",
+                            "⬅️ back"
                     ));
             editMessage.setReplyMarkup(markup);
             execute(editMessage);
@@ -579,15 +624,25 @@ public class QRCodeTgBot extends TelegramLongPollingBot {
 
     @SneakyThrows
     private void showOptionsToChooseType(TgUser user) {
-
-        SendMessage message = new SendMessage();
-        message.setChatId(user.getChatId());
-        message.setText("Choose a type of a QR code");
         InlineKeyboardMarkup markup = tgBotUtils.createMarkup(List.of("Basic qr code", "Permanent VIP", "Permanent RAW"));
-        message.setReplyMarkup(markup);
 
-        Integer messageId = execute(message).getMessageId();
-        user.setMessageId(messageId);
+        if (user.getMessageId() != null) {
+            EditMessageText messageText = new EditMessageText();
+            messageText.setChatId(user.getChatId());
+            messageText.setMessageId(user.getMessageId());
+            messageText.setText("Choose a type of a QR code");
+            messageText.setReplyMarkup(markup);
+                execute(messageText);
+        } else {
+            SendMessage message = new SendMessage();
+            message.setChatId(user.getChatId());
+            message.setText("Choose a type of a QR code");
+            message.setReplyMarkup(markup);
+                Integer messageId = execute(message).getMessageId();
+                user.setMessageId(messageId);
+
+        }
+
         user.setGenerateQrCodeRightNow(true);
         userRepository.save(user);
     }

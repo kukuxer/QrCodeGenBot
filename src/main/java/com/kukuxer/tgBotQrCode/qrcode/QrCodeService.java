@@ -1,5 +1,8 @@
 package com.kukuxer.tgBotQrCode.qrcode;
 
+import com.kukuxer.tgBotQrCode.qrCodeVisitor.QrCodeVisitor;
+import com.kukuxer.tgBotQrCode.qrCodeVisitor.QrCodeVisitorRepository;
+import com.kukuxer.tgBotQrCode.tgBot.MessagesForUser;
 import com.kukuxer.tgBotQrCode.tgBot.QRCodeTgBot;
 import com.kukuxer.tgBotQrCode.user.TgUser;
 import com.kukuxer.tgBotQrCode.user.UserRepository;
@@ -11,8 +14,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
+import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -22,6 +27,8 @@ public class QrCodeService {
     private final UserRepository userRepository;
     private final QRCodeTgBot qrCodeTgBot;
     private final QRCodeGenerator qrCodeGenerator;
+    private final MessagesForUser messages;
+    private final QrCodeVisitorRepository qrCodeVisitorRepository;
 
     @Transactional
     public void generateQrCode(TgUser user) {
@@ -43,7 +50,6 @@ public class QrCodeService {
                 .build();
         qrCodeRepository.save(qrCode);
         user.setStepOfGenerationCode(1);
-        user.getQrCodes().add(qrCode);
         userRepository.save(user);
 
     }
@@ -76,7 +82,71 @@ public class QrCodeService {
         userRepository.save(user);
     }
 
+    public void setCustomColorForForeGround(TgUser user, Update update) {
+        try {
+            QrCode qrCode = qrCodeRepository.findByCreatorAndIsCreatedFalse(user).orElseThrow(() -> new RuntimeException("QR Code not found for user"));
+            qrCode.setForegroundColor(Color.decode(update.getMessage().getText()));
+            qrCodeRepository.save(qrCode);
+            messages.showUserPossibleCustomizationForBackGround(user);
+        } catch (Exception e) {
+            e.printStackTrace();
+            qrCodeTgBot.sendMessageToUser(user, "something went wrong, try again(probably wrong format)");
+        }
+    }
+
+    public void setCustomColorForBackGround(TgUser user, Update update) {
+        try {
+            QrCode qrCode = qrCodeRepository.findByCreatorAndIsCreatedFalse(user).orElseThrow(() -> new RuntimeException("QR Code not found for user"));
+            qrCode.setBackgroundColor(Color.decode(update.getMessage().getText()));
+            qrCodeRepository.save(qrCode);
+            messages.tellUserToWriteTextForQRCode(user);
+        } catch (Exception e) {
+            e.printStackTrace();
+            qrCodeTgBot.sendMessageToUser(user, "something went wrong, try again(probably wrong format)");
+        }
+    }
+
+    public void processQRCodeGenerating(TgUser user) {
+        if (user.isGenerateQrCodeRightNow()) {
+            qrCodeTgBot.sendMessageToUser(user, "Sorry but you already generating Qr code!");
+            return;
+        }
+        generateQrCode(user);
+        messages.showOptionsToChooseType(user);
+    }
+
     public List<QrCode> getQrCodesByUser(TgUser user) {
         return qrCodeRepository.findAllByCreator(user);
+    }
+
+    public void deleteQrCode(TgUser user, String text) {
+        try {
+            QrCode qrCode = qrCodeRepository.findById(UUID.fromString(text)).orElseThrow(
+                    () -> new RuntimeException("Qr not found by id" + text)
+            );
+            qrCodeRepository.delete(qrCode);
+            qrCodeTgBot.deleteMessage(user,user.getAdditionalMessageId());
+            qrCodeTgBot.sendMessageToUser(user, " Qr code was successfully deleted \uD83E\uDD2B \uD83E\uDD2B \uD83E\uDD2B ");
+            user.setWantToDelete(false);
+            userRepository.save(user);
+
+        } catch (Exception e) {
+            qrCodeTgBot.sendMessageToUser(user, "no QR codes exists by this id");
+        }
+    }
+
+    public void showQRCodeVisitorsById(TgUser user, String text) {
+        try {
+            QrCode qrCode = qrCodeRepository.findById(UUID.fromString(text)).orElseThrow(
+                    () -> new RuntimeException("Qr not found by id" + text)
+            );
+            List<QrCodeVisitor> qrCodeVisitors = qrCodeVisitorRepository.findAllByVisitedQrCode(qrCode);
+            messages.showUserQrCodeVisitors(user, qrCodeVisitors);
+            user.setWantToCheckVisitors(false);
+            userRepository.save(user);
+
+        } catch (Exception e) {
+            qrCodeTgBot.sendMessageToUser(user, "no QR codes exists by this id");
+        }
     }
 }

@@ -26,9 +26,13 @@ public class TgUser {
     @Enumerated(EnumType.STRING)
     Role role;
     Integer messageId;
+    Integer additionalMessageId;
     int stepOfGenerationCode;
     boolean generateQrCodeRightNow;
     boolean isOnFinalStepOfCreation;
+    boolean wantToChangeLink;
+    boolean wantToDelete;
+    boolean wantToCheckVisitors;
     @OneToMany()
     @JoinColumn(name = "qr_code_id")
     List<QrCode> qrCodes;

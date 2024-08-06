@@ -44,7 +44,7 @@ public class QrCode {
     Boolean isActive;
     Boolean isCreated;
     Integer qrCodeScanCount;
-    @OneToMany
+    @OneToMany(cascade = CascadeType.REMOVE)
     @JoinColumn(name = "qr_code_visitor_id")
     List<QrCodeVisitor> qrCodeVisitors;
 

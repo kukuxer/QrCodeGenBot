@@ -26,7 +26,6 @@ import org.telegram.telegrambots.meta.api.objects.commands.scope.BotCommandScope
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 
 
-import javax.swing.text.html.HTML;
 import java.awt.*;
 import java.time.LocalDateTime;
 
@@ -169,23 +168,31 @@ public class QRCodeTgBot extends TelegramLongPollingBot {
             case "/start" -> {
                 sendMessageToUser(user, "\uD83D\uDC4B *Welcome to QrCodeGenBot!*");
                 sendMessageToUser(user,
-                        "We're thrilled to have you here! \uD83D\uDE0A Let's get started together.\n" +
-                                "\n" +
-                                "✨ *What Can You Do Here?*\n"
+                        """
+                                We're thrilled to have you here! \uD83D\uDE0A Let's get started together.
+
+                                ✨ *What Can You Do Here?*
+                                """
                 );
                 sendMessageToUser(user,
-                        "*Create Custom QR Codes* \uD83C\uDFA8\n" +
-                                "Design unique QR codes in any color you can imagine. Only your creativity sets the limit!\n"
+                        """
+                                *Create Custom QR Codes* \uD83C\uDFA8
+                                Design unique QR codes in any color you can imagine. Only your creativity sets the limit!
+                                """
                 );
                 sendMessageToUser(user,
-                        "*Track Your Codes* \uD83D\uDCCA\n" +
-                                "Monitor how many times your codes are scanned.\n" +
-                                "See from which country the scans are coming from.\n" +
-                                "We might even give you the IP addresses of those who scanned them (shh, it's a secret! \uD83E\uDD2B).\n"
+                        """
+                                *Track Your Codes* \uD83D\uDCCA
+                                Monitor how many times your codes are scanned.
+                                See from which country the scans are coming from.
+                                We might even give you the IP addresses of those who scanned them (shh, it's a secret! \uD83E\uDD2B).
+                                """
                 );
                 sendMessageToUser(user,
-                        "*Dynamic Links* \uD83D\uDD04\n" +
-                                "Change the link (or text) that opens when people scan your QR code, without altering the QR code image itself!\n"
+                        """
+                                *Dynamic Links* \uD83D\uDD04
+                                Change the link (or text) that opens when people scan your QR code, without altering the QR code image itself!
+                                """
                 );
                 sendMessageToUser(user,
                         "\uD83D\uDCA1 *A Little Hint:*\n" +
@@ -202,26 +209,32 @@ public class QRCodeTgBot extends TelegramLongPollingBot {
             case "/info" -> {
                 sendMessageToUser(user, "ℹ️ *QR Code Types and Features*");
                 sendMessageToUser(user,
-                        "*Basic QR Code* \uD83D\uDD11\n" +
-                                "- Works for 2 weeks, after which it expires. ⏳\n" +
-                                "- Only default or random colors are available for customization. 🎨\n" +
-                                "- You can have a maximum of 5 basic QR codes. ✋\n" +
-                                "- See the number of times the link is clicked from the statistics. 📈\n" +
-                                "- You can't actively change the link. 🚫🔗\n"
+                        """
+                                *Basic QR Code* \uD83D\uDD11
+                                - Works for 2 weeks, after which it expires. ⏳
+                                - Only default or random colors are available for customization. 🎨
+                                - You can have a maximum of 5 basic QR codes. ✋
+                                - See the number of times the link is clicked from the statistics. 📈
+                                - You can't actively change the link. 🚫🔗
+                                """
                 );
                 sendMessageToUser(user,
-                        "*Permanent VIP* \uD83D\uDD25👑\n" +
-                                "- Works forever. ♾️\n" +
-                                "- Any customization is available. 🌈\n" +
-                                "- Access to all statistics. 📊\n" +
-                                "- Full access to all features we offer. 🎁\n"
+                        """
+                                *Permanent VIP* \uD83D\uDD25👑
+                                - Works forever. ♾️
+                                - Any customization is available. 🌈
+                                - Access to all statistics. 📊
+                                - Full access to all features we offer. 🎁
+                                """
                 );
                 sendMessageToUser(user,
-                        "*Raw Permanent* \uD83E\uDD16⚡\n" +
-                                "- Works indefinitely, even after the extinction of humanity! \uD83D\uDE0E💀\n" +
-                                "- Does not require the Internet to reveal the content behind the QR code. 🌐❌\n" +
-                                "- Most common QR code with open customization. 🛠️\n" +
-                                "- You can't actively change the link or track statistics. 🚫📊\n"
+                        """
+                                *Raw Permanent* \uD83E\uDD16⚡
+                                - Works indefinitely, even after the extinction of humanity! \uD83D\uDE0E💀
+                                - Does not require the Internet to reveal the content behind the QR code. 🌐❌
+                                - Most common QR code with open customization. 🛠️
+                                - You can't actively change the link or track statistics. 🚫📊
+                                """
                 );
             }
         }
@@ -229,16 +242,14 @@ public class QRCodeTgBot extends TelegramLongPollingBot {
 
 
     private void showUserProfile(TgUser user) {
-        StringBuilder profileMessage = new StringBuilder();
-        profileMessage.append("\uD83D\uDC64 *Your Profile*\n");
-        profileMessage.append("\n");
-        profileMessage.append("👤 *Username:* ").append(user.getTgUsername() != null ? "@" + user.getTgUsername() : "Unknown Adventurer \uD83E\uDDD0").append("\n");
-        profileMessage.append("🎭 *Role:* ").append(user.getRole() != null ? user.getRole().name() : "Mystery Role \uD83D\uDC40").append("\n");
-        profileMessage.append("💬 *Chat ID:* ").append(user.getChatId() != null ? user.getChatId() : "Not Available \uD83D\uDE36").append("\n");
-        profileMessage.append("🆔 *Telegram User ID:* ").append(user.getTelegramUserId() != null ? user.getTelegramUserId() : "Not Available \uD83D\uDE36").append("\n");
-        profileMessage.append("\n");
+        String profileMessage = "\uD83D\uDC64 *Your Profile*\n" +
+                "\n" +
+                "👤 *Username:* " + (user.getTgUsername() != null ? "@" + user.getTgUsername() : "Unknown Adventurer \uD83E\uDDD0") + "\n" +
+                "🎭 *Role:* " + (user.getRole() != null ? user.getRole().name() : "Mystery Role \uD83D\uDC40") + "\n" +
+                "🆔 *Telegram User ID:* " + (user.getTelegramUserId() != null ? user.getTelegramUserId() : "Not Available \uD83D\uDE36") + "\n" +
+                "\n";
 
-        sendMessageToUser(user, profileMessage.toString());
+        sendMessageToUser(user, profileMessage);
     }
 
     private void showUserQrCodes(TgUser user) {
@@ -254,10 +265,13 @@ public class QRCodeTgBot extends TelegramLongPollingBot {
         sendMessageToUser(user, "📋 *Your QR Codes*");
 
         for (QrCode qrCode : qrCodes) {
+            if (qrCode.getType() == null) {
+                continue;
+            }
             String qrCodeMessage = "🔹 *QR Code ID:* `" + qrCode.getUuid() + "`\n" +
                     "\uD83C\uDFA9 *Type:* " + qrCode.getType() + "\n" +
                     "\uD83D\uDC85 *Text:* " + qrCode.getText() + "\n" +
-                    "🔗 *Link:* " + qrCode.getFullLink() + "\n" +
+                    "🔗 *Link:* [" + qrCode.getText() + "](" + qrCode.getFullLink() + ")\n" +
                     "📅 *Created On:* " + (qrCode.getCreationDate() != null ? qrCode.getCreationDate().toLocalDate().toString() : "Unknown Date") + "\n" +
                     "⏳ *Expiration Time:* " + (qrCode.getExpirationTime() != null ? qrCode.getExpirationTime().toLocalDate().toString() : "Never") + "\n" +
                     "🔄 *Active:* " + (qrCode.getIsActive() != null && qrCode.getIsActive() ? "Yes" : "No") + "\n" +
@@ -329,12 +343,12 @@ public class QRCodeTgBot extends TelegramLongPollingBot {
                 qrCodeRepository.save(qrCode);
                 showUserPossibleCustomizationForBackGround(user);
                 break;
-            case "⬛\uFE0FBlack foreGround ":
+            case "⬛️Black foreGround ":
                 qrCode.setForegroundColor(Color.BLACK);
                 qrCodeRepository.save(qrCode);
                 showUserPossibleCustomizationForBackGround(user);
                 break;
-            case "⬜\uFE0FWhite foreGround ":
+            case "⬜️White foreGround ":
                 qrCode.setForegroundColor(Color.WHITE);
                 qrCodeRepository.save(qrCode);
                 showUserPossibleCustomizationForBackGround(user);
@@ -385,12 +399,12 @@ public class QRCodeTgBot extends TelegramLongPollingBot {
                 qrCodeRepository.save(qrCode);
                 tellUserToWriteTextForQRCode(user);
                 break;
-            case "⬛\uFE0FBlack BackGround ":
+            case "⬛️Black BackGround ":
                 qrCode.setBackgroundColor(Color.BLACK);
                 qrCodeRepository.save(qrCode);
                 tellUserToWriteTextForQRCode(user);
                 break;
-            case "⬜\uFE0FWhite BackGround ":
+            case "⬜️White BackGround ":
                 qrCode.setBackgroundColor(Color.WHITE);
                 qrCodeRepository.save(qrCode);
                 tellUserToWriteTextForQRCode(user);
@@ -400,8 +414,8 @@ public class QRCodeTgBot extends TelegramLongPollingBot {
                 qrCodeRepository.save(qrCode);
                 tellUserToWriteTextForQRCode(user);
                 break;
-            case "⬅\uFE0F back":
-                proccesBackButton(user);
+            case "⬅️ back":
+                processBackButton(user);
                 break;
             default:
                 // Handle unknown callback data
@@ -409,7 +423,7 @@ public class QRCodeTgBot extends TelegramLongPollingBot {
         }
     }
 
-    private void proccesBackButton(TgUser user) {
+    private void processBackButton(TgUser user) {
         switch (user.getStepOfGenerationCode()) {
             case 20, 3 -> showUserPossibleCustomizationForForeground(user);
             case 30, 4 -> showUserPossibleCustomizationForBackGround(user);
@@ -434,8 +448,8 @@ public class QRCodeTgBot extends TelegramLongPollingBot {
                             "\uD83D\uDFE6" + "Blue foreGround ",
                             "\uD83D\uDFEA" + "Purple foreGround ",
                             "\uD83D\uDFEB" + "Brown foreGround ",
-                            "⬛\uFE0F" + "Black foreGround ",
-                            "⬜\uFE0F" + "White foreGround ",
+                            "⬛️" + "Black foreGround ",
+                            "⬜️" + "White foreGround ",
                             "\uD83D\uDD33" + "Choose default",
                             "Choose Random color for foreGround",
                             "Create your own color for foreGround"
@@ -454,8 +468,8 @@ public class QRCodeTgBot extends TelegramLongPollingBot {
             EditMessageText editMessage = new EditMessageText();
             editMessage.setChatId(user.getChatId());
             editMessage.setMessageId(messageId);
-            editMessage.setText("Write your color in Hexadecimal format(e.g., \"#RRGGBB\" or \"RRGGBB\"): \n Example: #FF5733 or FF5733 ");
-            InlineKeyboardMarkup markup = tgBotUtils.createMarkup(List.of("⬅\uFE0F back"));
+            editMessage.setText("Write your color in Hexadecimal format(e.g., \"#RRGGBB\" or \"RRGGBB\"): \n Example: #FF5733");
+            InlineKeyboardMarkup markup = tgBotUtils.createMarkup(List.of("⬅️ back"));
             editMessage.setReplyMarkup(markup);
             execute(editMessage);
         }
@@ -486,11 +500,11 @@ public class QRCodeTgBot extends TelegramLongPollingBot {
                             "\uD83D\uDFE6" + "Blue BackGround ",
                             "\uD83D\uDFEA" + "Purple BackGround ",
                             "\uD83D\uDFEB" + "Brown BackGround ",
-                            "⬛\uFE0F" + "Black BackGround ",
-                            "⬜\uFE0F" + "White BackGround ",
+                            "⬛️" + "Black BackGround ",
+                            "⬜️" + "White BackGround ",
                             "Choose Random color for BackGround",
                             "Create your own color for BackGround",
-                            "⬅\uFE0F back"
+                            "⬅️ back"
                     ));
             editMessage.setReplyMarkup(markup);
             execute(editMessage);
@@ -506,7 +520,7 @@ public class QRCodeTgBot extends TelegramLongPollingBot {
             EditMessageText editMessage = new EditMessageText();
             editMessage.setChatId(user.getChatId());
             editMessage.setMessageId(messageId);
-            InlineKeyboardMarkup markup = tgBotUtils.createMarkup(List.of("⬅\uFE0F back"));
+            InlineKeyboardMarkup markup = tgBotUtils.createMarkup(List.of("⬅️ back"));
             editMessage.setReplyMarkup(markup);
             editMessage.setText("Send link or text for your qr code:");
             execute(editMessage);

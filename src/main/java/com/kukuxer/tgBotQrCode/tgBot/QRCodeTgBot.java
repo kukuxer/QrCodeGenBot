@@ -2,7 +2,6 @@ package com.kukuxer.tgBotQrCode.tgBot;
 
 import com.kukuxer.tgBotQrCode.qrCodeVisitor.QrCodeVisitor;
 import com.kukuxer.tgBotQrCode.qrCodeVisitor.QrCodeVisitorRepository;
-import com.kukuxer.tgBotQrCode.qrcode.QRCodeGenerator;
 import com.kukuxer.tgBotQrCode.qrcode.QrCode;
 import com.kukuxer.tgBotQrCode.qrcode.QrCodeRepository;
 import com.kukuxer.tgBotQrCode.qrcode.QrCodeService;
@@ -11,6 +10,7 @@ import com.kukuxer.tgBotQrCode.user.UserRepository;
 import com.kukuxer.tgBotQrCode.user.UserService;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.ParseMode;
@@ -40,28 +40,30 @@ import java.util.Random;
 @Slf4j
 public class QRCodeTgBot extends TelegramLongPollingBot {
     private final TelegramBotConfig telegramBotConfig;
-    private final QRCodeGenerator qrCodeGenerator;
     private final UserService userService;
     private final TgBotUtils tgBotUtils;
     private final UserRepository userRepository;
-    private final QrCodeService qrCodeService;
     private final QrCodeRepository qrCodeRepository;
     private final QrCodeVisitorRepository qrCodeVisitorRepository;
+    private final ApplicationContext context;
     private static final Random random = new Random();
 
     public QRCodeTgBot(
             TelegramBotConfig telegramBotConfig,
-            QRCodeGenerator qrCodeGenerator,
-            UserService userService, TgBotUtils tgBotUtils, UserRepository userRepository, QrCodeService qrCodeService, QrCodeRepository qrCodeRepository, QrCodeVisitorRepository qrCodeVisitorRepository
+            UserService userService,
+            TgBotUtils tgBotUtils,
+            UserRepository userRepository,
+            QrCodeRepository qrCodeRepository,
+            QrCodeVisitorRepository qrCodeVisitorRepository,
+            ApplicationContext context
     ) {
         this.telegramBotConfig = telegramBotConfig;
-        this.qrCodeGenerator = qrCodeGenerator;
         this.userService = userService;
         this.tgBotUtils = tgBotUtils;
         this.userRepository = userRepository;
-        this.qrCodeService = qrCodeService;
         this.qrCodeRepository = qrCodeRepository;
         this.qrCodeVisitorRepository = qrCodeVisitorRepository;
+        this.context = context;
         generateMenuButtons();
     }
 
@@ -79,7 +81,7 @@ public class QRCodeTgBot extends TelegramLongPollingBot {
     @SneakyThrows
     public void onUpdateReceived(Update update) {
         TgUser user = userService.getByChatIdOrElseCreateNew(update);
-
+        QrCodeService qrCodeService = getQrCodeService();
         if (isCommand(update)) {
             String text = update.getMessage().getText();
             processCommands(user, text);
@@ -95,7 +97,7 @@ public class QRCodeTgBot extends TelegramLongPollingBot {
         }
 
         if (user.isOnFinalStepOfCreation() && update.hasMessage()) {
-            generateQrCode(user, update);
+            qrCodeService.generateQrCode(user, update);
         }
     }
 
@@ -123,36 +125,10 @@ public class QRCodeTgBot extends TelegramLongPollingBot {
         }
     }
 
-    @SneakyThrows
-    private void generateQrCode(TgUser user, Update update) {
-        QrCode qrCode = qrCodeRepository.findByCreatorAndIsCreatedFalse(user).orElseThrow(() -> new RuntimeException("QR Code not found for user"));
-        String text = update.getMessage().getText();
-        String fullLink;
-        if (qrCode.getType().equals("raw")) {
-            fullLink = update.getMessage().getText();
-        } else {
-            fullLink = "http://localhost:8080/redirect/" + qrCode.getUuid();
-        }
 
-        log.info("link: " + fullLink);
-        InputFile qrFile = qrCodeGenerator.getQRCodeImageFile(fullLink, qrCode.getForegroundColor(), qrCode.getBackgroundColor());
-        sendPhoto(update.getMessage().getChatId(), qrFile);
-
-        qrCode.setIsCreated(true);
-        qrCode.setIsActive(true);
-        qrCode.setQrCodeScanCount(0);
-        qrCode.setText(text);
-        qrCode.setFullLink(fullLink);
-        qrCodeRepository.save(qrCode);
-        user.setStepOfGenerationCode(10);
-        user.setOnFinalStepOfCreation(false);
-        user.setGenerateQrCodeRightNow(false);
-        user.setMessageId(null);
-        userRepository.save(user);
-    }
 
     @SneakyThrows
-    private void sendPhoto(Long chatId, InputFile qrFile) {
+    public void sendPhoto(Long chatId, InputFile qrFile) {
         SendPhoto sendPhoto = new SendPhoto();
         sendPhoto.setChatId(chatId);
         sendPhoto.setPhoto(qrFile);
@@ -258,7 +234,7 @@ public class QRCodeTgBot extends TelegramLongPollingBot {
     }
 
     private void showUserQrCodes(TgUser user) {
-        List<QrCode> qrCodes = qrCodeService.getQrCodesByUser(user);
+        List<QrCode> qrCodes = getQrCodeService().getQrCodesByUser(user);
 
         if (qrCodes == null || qrCodes.isEmpty()) {
             sendMessageToUser(user, "🚫 *You have no QR codes yet!* \n" +
@@ -581,7 +557,7 @@ public class QRCodeTgBot extends TelegramLongPollingBot {
             sendMessageToUser(user, "Sorry but you already generating Qr code!");
             return;
         }
-        qrCodeService.generateQrCode(user);
+        getQrCodeService().generateQrCode(user);
         showOptionsToChooseType(user);
     }
 
@@ -646,6 +622,11 @@ public class QRCodeTgBot extends TelegramLongPollingBot {
         user.setGenerateQrCodeRightNow(true);
         userRepository.save(user);
     }
+
+    public QrCodeService getQrCodeService(){
+        return context.getBean(QrCodeService.class);
+    }
+
 }
 
 

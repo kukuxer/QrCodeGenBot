@@ -143,6 +143,7 @@ public class QRCodeTgBot extends TelegramLongPollingBot {
         qrCodeRepository.save(qrCode);
         user.setStepOfGenerationCode(10);
         user.setOnFinalStepOfCreation(false);
+        user.setGenerateQrCodeRightNow(false);
         userRepository.save(user);
     }
 
@@ -587,6 +588,7 @@ public class QRCodeTgBot extends TelegramLongPollingBot {
 
         Integer messageId = execute(message).getMessageId();
         user.setMessageId(messageId);
+        user.setGenerateQrCodeRightNow(true);
         userRepository.save(user);
     }
 }

@@ -36,7 +36,6 @@ public class QrCodeService {
         qrCodeRepository.save(qrCode);
         user.setStepOfGenerationCode(1);
         user.getQrCodes().add(qrCode);
-        user.setGenerateQrCodeRightNow(true);
         userRepository.save(user);
 
     }

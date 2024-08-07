@@ -21,6 +21,11 @@ WORKDIR /app
 
 # Copy the JAR file from the first stage to the second stage
 COPY --from=build /app/target/*.jar app.jar
+
+RUN mkdir -p src/main/resources/GeoLite2-City_20240730
+
+COPY --from=build /app/src/main/resources/GeoLite2-City_20240730/GeoLite2-City.mmdb src/main/resources/GeoLite2-City_20240730/GeoLite2-City.mmdb
+
 # Expose port 8080 to the outside world
 EXPOSE 8080
 

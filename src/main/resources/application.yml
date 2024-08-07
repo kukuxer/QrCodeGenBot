@@ -2,9 +2,9 @@ spring:
   application:
     name: telegram bot QR code
   datasource:
-    username: postgres
-    password: postgres
-    url: jdbc:postgresql://localhost:5436/tgQRBot
+    username: dbtgqrbot_user
+    password: caRySqgeH9a02Mjj9HVKb00ugWDjEGJT
+    url: jdbc:postgresql://dpg-cqpk0mtsvqrc73ft3feg-a.frankfurt-postgres.render.com:5432/dbtgqrbot
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:

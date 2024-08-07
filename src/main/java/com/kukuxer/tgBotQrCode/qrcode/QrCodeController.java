@@ -39,7 +39,7 @@ public class QrCodeController {
                 return "expired";
             }
 
-            String ipAddress = request.getRemoteAddr();
+            String ipAddress = getClientIp(request);
             QrCodeVisitor qrCodeVisitor = qrCodeVisitorService.createQrCodeVisitorByIpOrElseCreateNew(ipAddress, qrCode);
 
             qrCode.getQrCodeVisitors().add(qrCodeVisitor);
@@ -70,5 +70,12 @@ public class QrCodeController {
             model.addAttribute("message", "Error processing QR Code: " + e.getMessage());
             return "message";
         }
+    }
+    public String getClientIp(HttpServletRequest request) {
+        String header = request.getHeader("X-Forwarded-For");
+        if (header == null || header.isEmpty() || "unknown".equalsIgnoreCase(header)) {
+            return request.getRemoteAddr();
+        }
+        return header.split(",")[0];  // In case of multiple proxies, the first IP is the client's real IP
     }
 }

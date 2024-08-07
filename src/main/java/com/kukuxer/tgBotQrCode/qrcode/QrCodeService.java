@@ -64,7 +64,7 @@ public class QrCodeService {
         if (qrCode.getType().equals("raw")) {
             fullLink = update.getMessage().getText();
         } else {
-            fullLink = "http://localhost:8080/redirect/" + qrCode.getUuid();
+            fullLink = "https://28d0-2001-bb6-2cb8-f700-c882-89b-8fe2-4648.ngrok-free.app/redirect/" + qrCode.getUuid();
         }
 
         log.info("link: " + fullLink);
@@ -127,7 +127,7 @@ public class QrCodeService {
                     () -> new RuntimeException("Qr not found by id" + text)
             );
             qrCodeRepository.delete(qrCode);
-            qrCodeTgBot.deleteMessage(user,user.getAdditionalMessageId());
+            qrCodeTgBot.deleteMessage(user, user.getAdditionalMessageId());
             qrCodeTgBot.sendMessageToUser(user, " Qr code was successfully deleted \uD83E\uDD2B \uD83E\uDD2B \uD83E\uDD2B ");
             user.setWantToDelete(false);
             userRepository.save(user);
@@ -152,15 +152,29 @@ public class QrCodeService {
         }
     }
 
-    public void changeQrCodeLink(String data) {
-        try{
+    public void processChangeQrCodeLink(TgUser user, String data) {
+        try {
             QrCode qrCode = qrCodeRepository.findById(UUID.fromString(data)).orElseThrow();
-            TgUser creator = qrCode.getCreator();
-            creator.setQrCodeIdToChange(qrCode.getUuid());
-            userRepository.save(creator);
-            qrCodeTgBot.sendMessageToUser(creator,"Please provide new link for your qr code.");
-        }catch (Exception e){
-            log.error("sasi");
+            user.setQrCodeIdToChange(qrCode.getUuid());
+            userRepository.save(user);
+            qrCodeTgBot.sendMessageToUser(user, " Current text: " + qrCode.getText() + "Please provide new link or text for your qr code: ");
+        } catch (Exception e) {
+            qrCodeTgBot.sendMessageToUser(user, "something went wrong");
+        }
+    }
+
+    public void changeQrCodeLink(TgUser user, String text) {
+        try {
+            QrCode qrCode = qrCodeRepository.findById(user.getQrCodeIdToChange()).orElseThrow();
+            qrCode.setText(text);
+            qrCodeRepository.save(qrCode);
+            user.setWantToChangeLink(false);
+            user.setQrCodeIdToChange(null);
+            userRepository.save(user);
+            qrCodeTgBot.sendMessageToUser(user, "Successfully changed to " + text);
+
+        } catch (Exception e) {
+            qrCodeTgBot.sendMessageToUser(user, "Ooooopss something wrong");
         }
     }
 }

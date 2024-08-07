@@ -84,18 +84,15 @@ public class QRCodeTgBot extends TelegramLongPollingBot {
         TgUser user = userService.getByChatIdOrElseCreateNew(update);
         QrCodeService qrCodeService = getQrCodeService();
 
-        if(!isNull(user.getQrCodeIdToChange())){
-            if(update.hasMessage()){
-                QrCode qrCode = qrCodeRepository.findById(user.getQrCodeIdToChange()).orElseThrow();
-                qrCode.setText(update.getMessage().getText());
-                qrCodeRepository.save(qrCode);
-                return;
+        if (!isNull(user.getQrCodeIdToChange())) {
+            if (update.hasMessage()) {
+               qrCodeService.changeQrCodeLink(user,update.getMessage().getText());
             }
         }
 
-        if(update.hasCallbackQuery()){
-            if(user.isWantToChangeLink()){
-                qrCodeService.changeQrCodeLink(update.getCallbackQuery().getData());
+        if (update.hasCallbackQuery()) {
+            if (user.isWantToChangeLink()) {
+                qrCodeService.processChangeQrCodeLink(user, update.getCallbackQuery().getData());
                 return;
             }
         }
@@ -351,8 +348,8 @@ public class QRCodeTgBot extends TelegramLongPollingBot {
             return;
         }
 
-        if(notCreatedQrCode != null){
-            if (notCreatedQrCode.getType().equals("basic")){
+        if (notCreatedQrCode != null) {
+            if (notCreatedQrCode.getType().equals("basic")) {
                 if (user.getStepOfGenerationCode() == 4) {
                     getMessages().showUserCustomizationForBasicQRCode(user);
                     return;

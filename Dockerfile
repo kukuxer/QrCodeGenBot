@@ -20,7 +20,7 @@ FROM openjdk:17-jdk-slim
 WORKDIR /app
 
 # Copy the JAR file from the first stage to the second stage
-COPY --from=build /app/target/tgBotQrCode-0.0.1-SNAPSHOT.jar app.jar
+COPY --from=build /app/target/*.jar app.jar
 # Expose port 8080 to the outside world
 EXPOSE 8080
 

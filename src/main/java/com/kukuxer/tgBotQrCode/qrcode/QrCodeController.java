@@ -18,7 +18,7 @@ import java.util.UUID;
 
 @Controller
 @RequiredArgsConstructor
-@RequestMapping("/redirect")
+@RequestMapping()
 public class QrCodeController {
     private final QrCodeRepository qrCodeRepository;
     private final QrCodeVisitorService qrCodeVisitorService;

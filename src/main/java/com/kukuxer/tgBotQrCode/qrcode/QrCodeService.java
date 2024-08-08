@@ -64,7 +64,7 @@ public class QrCodeService {
         if (qrCode.getType().equals("raw")) {
             fullLink = update.getMessage().getText();
         } else {
-            fullLink = "https://qrcodegenbot.onrender.com/redirect/" + qrCode.getUuid();
+            fullLink = "https://qrcodegenbot.onrender.com/" + qrCode.getUuid();
         }
 
         log.info("link: " + fullLink);

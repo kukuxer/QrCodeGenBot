@@ -29,6 +29,7 @@ public class TgUser {
     Integer messageId;
     Integer additionalMessageId;
     int stepOfGenerationCode;
+    int stepOfManagingCodes;
     boolean generateQrCodeRightNow;
     boolean isOnFinalStepOfCreation;
     boolean wantToChangeLink;

@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS tg_user
     message_id                   INT,
     additional_message_id        INT,
     step_of_generation_code      int,
+    step_of_managing_codes       int,
     generate_qr_code_right_now   boolean,
     want_to_change_link          boolean,
     want_to_delete               boolean,

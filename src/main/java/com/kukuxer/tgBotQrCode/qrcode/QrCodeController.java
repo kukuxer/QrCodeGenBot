@@ -60,7 +60,7 @@ public class QrCodeController {
                     throw new URISyntaxException(url, "Invalid URL scheme");
                 }
             } catch (URISyntaxException e) {
-                model.addAttribute("message", "Invalid URL: " + url);
+                model.addAttribute("message", url);
                 return "message";
             }
 

@@ -74,6 +74,7 @@ public class QrCodeService {
         qrCode.setIsCreated(true);
         qrCode.setIsActive(true);
         qrCode.setQrCodeScanCount(0);
+        qrCode.setType("none");
         qrCode.setText(text);
         qrCode.setFullLink(fullLink);
         qrCodeRepository.save(qrCode);
@@ -127,7 +128,6 @@ public class QrCodeService {
                     () -> new RuntimeException("Qr not found by id" + text)
             );
             qrCodeRepository.delete(qrCode);
-            qrCodeTgBot.deleteMessage(user, user.getAdditionalMessageId());
             qrCodeTgBot.sendMessageToUser(user, " Qr code was successfully deleted \uD83E\uDD2B \uD83E\uDD2B \uD83E\uDD2B ");
             user.setWantToDelete(false);
             userRepository.save(user);
@@ -159,7 +159,7 @@ public class QrCodeService {
             userRepository.save(user);
             qrCodeTgBot.sendMessageToUser(user, " Current text: " + qrCode.getText() + "Please provide new link or text for your qr code: ");
         } catch (Exception e) {
-            qrCodeTgBot.sendMessageToUser(user, "something went wrong");
+            log.warn(e.getMessage());
         }
     }
 

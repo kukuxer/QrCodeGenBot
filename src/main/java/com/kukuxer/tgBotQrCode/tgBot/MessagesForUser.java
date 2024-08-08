@@ -169,15 +169,11 @@ public class MessagesForUser {
         tgBot.sendMessageToUser(user, "\uD83D\uDC4B *Welcome to QrCodeGenBot!*");
         tgBot.sendMessageToUser(user,
                 """
-                        We're thrilled to have you here! \uD83D\uDE0A Let's get started together.
-
+                    
                         ✨ *What Can You Do Here?*
-                        """
-        );
-        tgBot.sendMessageToUser(user,
-                """
+                        
                         *Create Custom QR Codes* \uD83C\uDFA8
-                        Design unique QR codes in any color you can imagine. Only your creativity sets the limit!
+                        Design unique QR codes in any color you can imagine.
                         """
         );
         tgBot.sendMessageToUser(user,
@@ -195,13 +191,8 @@ public class MessagesForUser {
                         """
         );
         tgBot.sendMessageToUser(user,
-                "\uD83D\uDCA1 *A Little Hint:*\n" +
-                        "All these amazing features come at a price, but don't worry\\—it's not much! Just a small investment for unlimited creativity and insights.\uD83D\uDCB8"
-        );
-        tgBot.sendMessageToUser(user,
                 "\uD83C\uDD93 *Free Version Available:*\n" +
                         "You can also use our free version to generate QR codes that expire in 2 weeks. A perfect way to try out our service! \uD83D\uDE80");
-
     }
 
     void sendMessageAfterInfoCommand(TgUser user) {

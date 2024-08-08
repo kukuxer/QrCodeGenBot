@@ -44,13 +44,15 @@ public class TgBotUtils {
         return markup;
     }
 
-    public InlineKeyboardMarkup createMarkupForQrCode(TgUser user){
+    public InlineKeyboardMarkup createMarkupForQrCode(TgUser user) {
         InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
         List<QrCode> qrCodes = qrCodeRepository.findAllByCreator(user);
         for (QrCode qrCode : qrCodes) {
-            List<InlineKeyboardButton> row = createButtonRowForQrCode(qrCode);
-            rows.add(row);
+            if (qrCode.getIsCreated()) {
+                List<InlineKeyboardButton> row = createButtonRowForQrCode(qrCode);
+                rows.add(row);
+            }
         }
         List<InlineKeyboardButton> backRow = getBackButtonRow();
         rows.add(backRow);
@@ -74,18 +76,21 @@ public class TgBotUtils {
 
         return row;
     }
+
     private InlineKeyboardButton createButtonForQrCode(QrCode qrCode) {
         InlineKeyboardButton button = new InlineKeyboardButton();
         button.setText(qrCode.getText());
         button.setCallbackData(String.valueOf(qrCode.getUuid()));
         return button;
     }
+
     private List<InlineKeyboardButton> createButtonRow(String name) {
         List<InlineKeyboardButton> row = new ArrayList<>();
         InlineKeyboardButton button = createButton(name);
         row.add(button);
         return row;
     }
+
     private InlineKeyboardButton createButton(String name) {
 
         InlineKeyboardButton button = new InlineKeyboardButton();
@@ -95,9 +100,15 @@ public class TgBotUtils {
     }
 
     public boolean isCommand(Update update) {
+        List<String> listOfCommands = List.of(
+                "/generateqrcode",
+                "/showmyqrcodes",
+                "/profile",
+                "/info"
+        );
         if (update.hasMessage() && update.getMessage().hasText()) {
             String text = update.getMessage().getText();
-            return text.startsWith("/");
+            return listOfCommands.contains(text);
         }
         return false;
     }

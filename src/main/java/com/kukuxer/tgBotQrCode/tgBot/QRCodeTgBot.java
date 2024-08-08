@@ -84,45 +84,47 @@ public class QRCodeTgBot extends TelegramLongPollingBot {
         TgUser user = userService.getByChatIdOrElseCreateNew(update);
         QrCodeService qrCodeService = getQrCodeService();
 
-        if (!isNull(user.getQrCodeIdToChange())) {
-            if (update.hasMessage()) {
-               qrCodeService.changeQrCodeLink(user,update.getMessage().getText());
+
+        if (tgBotUtils.isCommand(update)) {
+            processCommands(user, update.getMessage().getText());
+            return;
+        }
+
+        if (update.hasMessage()) {
+            String messageText = update.getMessage().getText();
+            if (user.isWantToDelete()) {
+                qrCodeService.deleteQrCode(user, messageText);
+                return;
+            }
+            if (user.isWantToCheckVisitors()) {
+                qrCodeService.showQRCodeVisitorsById(user, messageText);
+                return;
+            }
+            if (!isNull(user.getQrCodeIdToChange())) {
+                qrCodeService.changeQrCodeLink(user, messageText);
+                return;
+            }
+            if (user.getStepOfGenerationCode() == 20) {
+                qrCodeService.setCustomColorForForeGround(user, update);
+                return;
+            }
+            if (user.getStepOfGenerationCode() == 30) {
+                qrCodeService.setCustomColorForBackGround(user, update);
+                return;
+            }
+            if (user.isOnFinalStepOfCreation()) {
+                qrCodeService.generateQrCode(user, update);
+                return;
             }
         }
 
         if (update.hasCallbackQuery()) {
             if (user.isWantToChangeLink()) {
                 qrCodeService.processChangeQrCodeLink(user, update.getCallbackQuery().getData());
-                return;
             }
-        }
+            processCallbackQuery(user, update.getCallbackQuery());
 
-        if (update.hasMessage()) {
-            if (user.isWantToDelete()) {
-                qrCodeService.deleteQrCode(user, update.getMessage().getText());
-                return;
-            } else if (user.isWantToCheckVisitors()) {
-                qrCodeService.showQRCodeVisitorsById(user, update.getMessage().getText());
-            }
 
-        }
-
-        if (tgBotUtils.isCommand(update)) {
-            String text = update.getMessage().getText();
-            processCommands(user, text);
-            return;
-        } else if (update.hasCallbackQuery()) {
-            CallbackQuery callbackQuery = update.getCallbackQuery();
-            processCallbackQuery(user, callbackQuery);
-        }
-        if (user.getStepOfGenerationCode() == 20 && update.hasMessage()) {
-            qrCodeService.setCustomColorForForeGround(user, update);
-        } else if (user.getStepOfGenerationCode() == 30 && update.hasMessage()) {
-            qrCodeService.setCustomColorForBackGround(user, update);
-        }
-
-        if (user.isOnFinalStepOfCreation() && update.hasMessage()) {
-            qrCodeService.generateQrCode(user, update);
         }
     }
 
@@ -270,16 +272,19 @@ public class QRCodeTgBot extends TelegramLongPollingBot {
                 break;
             case "\uD83D\uDD04 change link":
                 user.setWantToChangeLink(true);
+                user.setStepOfManagingCodes(1);
                 userRepository.save(user);
                 getMessages().sendMessageForChangingQRCodeLink(user);
                 break;
             case "🗑️Delete":
                 user.setWantToDelete(true);
+                user.setStepOfManagingCodes(1);
                 userRepository.save(user);
                 getMessages().sendMessageForDeletingQRCode(user);
                 break;
             case "👁️Check visitors":
                 user.setWantToCheckVisitors(true);
+                user.setStepOfManagingCodes(1);
                 userRepository.save(user);
                 getMessages().sendMessageForCheckingQrCodeVisitors(user);
                 break;
@@ -287,7 +292,7 @@ public class QRCodeTgBot extends TelegramLongPollingBot {
                 processBackButton(user);
                 break;
             default:
-                // Handle unknown callback data
+                // Hans
                 break;
         }
     }
@@ -331,21 +336,30 @@ public class QRCodeTgBot extends TelegramLongPollingBot {
         if (user.isWantToDelete()) {
             deleteMessage(user, user.getAdditionalMessageId());
             user.setWantToDelete(false);
+            user.setStepOfManagingCodes(0);
             userRepository.save(user);
             getMessages().sendMessageForManagingQrCodes(user);
             return;
         } else if (user.isWantToChangeLink()) {
             deleteMessage(user, user.getAdditionalMessageId());
             user.setWantToChangeLink(false);
+            user.setStepOfManagingCodes(0);
             userRepository.save(user);
             getMessages().sendMessageForManagingQrCodes(user);
             return;
         } else if (user.isWantToCheckVisitors()) {
             deleteMessage(user, user.getAdditionalMessageId());
             user.setWantToCheckVisitors(false);
+            user.setStepOfManagingCodes(0);
             userRepository.save(user);
             getMessages().sendMessageForManagingQrCodes(user);
             return;
+        }
+
+        if (user.getStepOfManagingCodes() == 1) {
+            deleteMessage(user, user.getAdditionalMessageId());
+            user.setStepOfManagingCodes(0);
+            getMessages().sendMessageForManagingQrCodes(user);
         }
 
         if (notCreatedQrCode != null) {
@@ -368,11 +382,12 @@ public class QRCodeTgBot extends TelegramLongPollingBot {
     @SneakyThrows
     public void generateMenuButtons() {
         List<BotCommand> listOfCommands = List.of(
-                new BotCommand("/start", "start to work with bot."),
+                new BotCommand("/generateqrcode", "create your QR code"),
+                new BotCommand("/showmyqrcodes", "show all your QR codes"),
                 new BotCommand("/profile", "open your profile"),
-                new BotCommand("/info", "information that you need to know about this bot"),
-                new BotCommand("/showmyqrcodes", "show all qr codes that you have"),
-                new BotCommand("/generateqrcode", "create your QR code")
+                new BotCommand("/info", "information about this bot")
+
+
         );
         this.execute(
                 new SetMyCommands(

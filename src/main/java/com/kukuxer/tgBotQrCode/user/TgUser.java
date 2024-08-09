@@ -30,6 +30,7 @@ public class TgUser {
     Integer additionalMessageId;
     int stepOfGenerationCode;
     int stepOfManagingCodes;
+    int secretCode;
     boolean generateQrCodeRightNow;
     boolean isOnFinalStepOfCreation;
     boolean wantToChangeLink;

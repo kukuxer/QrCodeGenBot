@@ -32,6 +32,7 @@ public class QrCodeController {
                     .orElseThrow(() -> new RuntimeException("QR code not found"));
 
             if (qrCode.getExpirationTime().isBefore(LocalDateTime.now())) {
+                qrCode.setIsActive(false);
                 model.addAttribute("qrCode", qrCode.getQrCodeScanCount());
                 model.addAttribute("expirationDate", qrCode.getExpirationTime());
                 model.addAttribute("creationDate", qrCode.getCreationDate());
@@ -71,11 +72,12 @@ public class QrCodeController {
             return "message";
         }
     }
+
     public String getClientIp(HttpServletRequest request) {
         String header = request.getHeader("X-Forwarded-For");
         if (header == null || header.isEmpty() || "unknown".equalsIgnoreCase(header)) {
             return request.getRemoteAddr();
         }
-        return header.split(",")[0];  // In case of multiple proxies, the first IP is the client's real IP
+        return header.split(",")[0];
     }
 }

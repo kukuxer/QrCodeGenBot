@@ -104,7 +104,9 @@ public class TgBotUtils {
                 "/generateqrcode",
                 "/showmyqrcodes",
                 "/profile",
-                "/info"
+                "/info",
+                "/buyvip",
+                "/showMySecretCode"
         );
         if (update.hasMessage() && update.getMessage().hasText()) {
             String text = update.getMessage().getText();

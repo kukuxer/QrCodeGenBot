@@ -10,11 +10,13 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ThreadLocalRandom;
 
 @Service
 @RequiredArgsConstructor
 public class UserService {
     private final UserRepository userRepository;
+
 
     @Transactional
     public TgUser getByChatIdOrElseCreateNew(Update update) {
@@ -44,6 +46,7 @@ public class UserService {
                 .qrCodes(new ArrayList<>())
                 .generateQrCodeRightNow(false)
                 .isOnFinalStepOfCreation(false)
+                .secretCode(ThreadLocalRandom.current().nextInt(100, 1000))
                 .stepOfGenerationCode(0)
                 .role(Role.USER)
                 .build();

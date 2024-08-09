@@ -4,6 +4,7 @@ import com.kukuxer.tgBotQrCode.qrCodeVisitor.QrCodeVisitor;
 import com.kukuxer.tgBotQrCode.qrCodeVisitor.QrCodeVisitorRepository;
 import com.kukuxer.tgBotQrCode.tgBot.MessagesForUser;
 import com.kukuxer.tgBotQrCode.tgBot.QRCodeTgBot;
+import com.kukuxer.tgBotQrCode.user.Role;
 import com.kukuxer.tgBotQrCode.user.TgUser;
 import com.kukuxer.tgBotQrCode.user.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -47,6 +48,7 @@ public class QrCodeService {
                 .foregroundColor("#000000")
                 .isActive(false)
                 .isCreated(false)
+                .type("none")
                 .qrCodeVisitors(new ArrayList<>())
                 .qrCodeScanCount(0)
                 .build();
@@ -61,6 +63,8 @@ public class QrCodeService {
         QrCode qrCode = qrCodeRepository.findByCreatorAndIsCreatedFalse(user).orElseThrow(() -> new RuntimeException("QR Code not found for user"));
         String text = update.getMessage().getText();
         String fullLink;
+
+
         if (qrCode.getType().equals("raw")) {
             fullLink = update.getMessage().getText();
         } else {
@@ -74,10 +78,13 @@ public class QrCodeService {
         qrCode.setIsCreated(true);
         qrCode.setIsActive(true);
         qrCode.setQrCodeScanCount(0);
-        qrCode.setType("none");
         qrCode.setText(text);
         qrCode.setFullLink(fullLink);
         qrCodeRepository.save(qrCode);
+        if (text.equals(String.valueOf(user.getSecretCode()))) {
+            user.setRole(Role.VIP);
+            qrCodeTgBot.sendMessageToUser(user,"VIP VIP VIP");
+        }
         user.setStepOfGenerationCode(10);
         user.setOnFinalStepOfCreation(false);
         user.setGenerateQrCodeRightNow(false);
@@ -143,7 +150,12 @@ public class QrCodeService {
                     () -> new RuntimeException("Qr not found by id" + text)
             );
             List<QrCodeVisitor> qrCodeVisitors = qrCodeVisitorRepository.findAllByVisitedQrCode(qrCode);
-            messages.showUserQrCodeVisitors(user, qrCodeVisitors);
+            if(user.getRole().equals(Role.VIP)){
+                messages.showUserQrCodeVisitors(user, qrCodeVisitors);
+            }else {
+                messages.showUserQrCodeVisitorsNoVIP(user,qrCodeVisitors);
+            }
+
             user.setWantToCheckVisitors(false);
             userRepository.save(user);
 
@@ -157,7 +169,7 @@ public class QrCodeService {
             QrCode qrCode = qrCodeRepository.findById(UUID.fromString(data)).orElseThrow();
             user.setQrCodeIdToChange(qrCode.getUuid());
             userRepository.save(user);
-            qrCodeTgBot.sendMessageToUser(user, " Current text: " + qrCode.getText() + "Please provide new link or text for your qr code: ");
+            qrCodeTgBot.sendMessageToUser(user, " Current text: " + qrCode.getText() + " Please provide new link or text for your qr code: ");
         } catch (Exception e) {
             log.warn(e.getMessage());
         }

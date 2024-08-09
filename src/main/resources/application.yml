@@ -1,30 +1,36 @@
 spring:
+  config:
+    import: optional:file:.env[.properties]
+
   application:
-    name: telegram bot QR code
+    name: ${SPRING_APPLICATION_NAME}
   datasource:
-    username: dbtgqrbot_user
-    password: caRySqgeH9a02Mjj9HVKb00ugWDjEGJT
-    url: jdbc:postgresql://dpg-cqpk0mtsvqrc73ft3feg-a.frankfurt-postgres.render.com:5432/dbtgqrbot
-    driver-class-name: org.postgresql.Driver
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+    url: ${SPRING_DATASOURCE_URL}
+    driver-class-name: ${SPRING_DATASOURCE_DRIVER-CLASS-NAME}
   jpa:
     hibernate:
-      ddl-auto: validate
-    database: postgresql
-    database-platform: org.hibernate.dialect.PostgreSQLDialect
+      ddl-auto: ${SPRING_JPA_HIBERNATE_DDL-AUTO}
+    database: ${SPRING_JPA_DATABASE}
+    database-platform: ${SPRING_JPA_DATABASE-PLATFORM}
   flyway:
-    baseline-on-migrate: true
-    locations: classpath:db/migration
-    enabled: true
-    baseline-description: "init"
-    baseline-version: 0
-    user: ${spring.datasource.username}
-    password: ${spring.datasource.password}
+    baseline-on-migrate: ${SPRING_FLYWAY_BASELINE-ON-MIGRATE}
+    locations: ${SPRING_FLYWAY_LOCATIONS}
+    enabled: ${SPRING_FLYWAY_ENABLED}
+    baseline-description: ${SPRING_FLYWAY_BASELINE-DESCRIPTION}
+    baseline-version: ${SPRING_FLYWAY_BASELINE-VERSION}
+    user: ${SPRING_FLYWAY_USER}
+    password: ${SPRING_FLYWAY_PASSWORD}
 
 telegram:
   bot:
-    username: QrCodeGenMasterBot
-    token: 7410420840:AAEZwcz3m62F71S8HVJpgGj0s9EbO1y-61A
+    username: ${TELEGRAM_BOT_USERNAME}
+    token: ${TELEGRAM_BOT_TOKEN}
 
 geoip:
   database:
-    path: src/main/resources/GeoLite2-City_20240730/GeoLite2-City.mmdb
+    path: ${GEOIP_DATABASE_PATH}
+
+
+

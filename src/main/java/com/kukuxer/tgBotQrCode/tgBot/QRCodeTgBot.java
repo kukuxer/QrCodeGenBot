@@ -3,6 +3,7 @@ package com.kukuxer.tgBotQrCode.tgBot;
 import com.kukuxer.tgBotQrCode.qrcode.QrCode;
 import com.kukuxer.tgBotQrCode.qrcode.QrCodeRepository;
 import com.kukuxer.tgBotQrCode.qrcode.QrCodeService;
+import com.kukuxer.tgBotQrCode.user.Role;
 import com.kukuxer.tgBotQrCode.user.TgUser;
 import com.kukuxer.tgBotQrCode.user.UserRepository;
 import com.kukuxer.tgBotQrCode.user.UserService;
@@ -100,7 +101,7 @@ public class QRCodeTgBot extends TelegramLongPollingBot {
                 qrCodeService.showQRCodeVisitorsById(user, messageText);
                 return;
             }
-            if (!isNull(user.getQrCodeIdToChange())) {
+            if (!isNull(user.getQrCodeIdToChange()) && user.isWantToChangeLink()) {
                 qrCodeService.changeQrCodeLink(user, messageText);
                 return;
             }
@@ -135,28 +136,39 @@ public class QRCodeTgBot extends TelegramLongPollingBot {
             case "/profile" -> getMessages().showUserProfile(user);
             case "/showmyqrcodes" -> getMessages().showUserQrCodes(user);
             case "/info" -> getMessages().sendMessageAfterInfoCommand(user);
+            case "/buyvip" -> getMessages().sendMessageToBuyVIP(user);
+            case "/showMySecretCode" -> sendMessageToUser(user, String.valueOf(user.getSecretCode()));
         }
     }
 
     private void processCallbackQuery(TgUser user, CallbackQuery callbackQuery) {
         QrCode qrCode = qrCodeRepository.findByCreatorAndIsCreatedFalse(user).orElse(null);
         switch (callbackQuery.getData()) {
-            case "Basic qr code":
+            case "\uD83D\uDCC5 Basic qr code":
                 qrCode.setExpirationTime(LocalDateTime.now().plusWeeks(2));
                 qrCode.setType("basic");
                 qrCodeRepository.save(qrCode);
                 getMessages().showUserCustomizationForBasicQRCode(user);
                 break;
-            case "Permanent VIP":
-                qrCode.setExpirationTime(LocalDateTime.now().plusYears(1000));
-                qrCode.setType("vip");
-                qrCodeRepository.save(qrCode);
-                getMessages().showUserPossibleCustomizationForForeground(user);
+            case "\uD83D\uDC51 Permanent VIP":
+                if (user.getRole().equals(Role.VIP)) {
+                    qrCode.setExpirationTime(LocalDateTime.now().plusYears(1000));
+                    qrCode.setType("vip");
+                    qrCodeRepository.save(qrCode);
+                    getMessages().showUserPossibleCustomizationForForeground(user);
+                } else {
+                    sendMessageToUser(user, "you need VIP status for this");
+                }
                 break;
-            case "Permanent RAW":
-                qrCode.setType("raw");
-                qrCodeRepository.save(qrCode);
-                getMessages().showUserPossibleCustomizationForForeground(user);
+            case "\uD83D\uDEE0️ Permanent RAW":
+                if (user.getRole().equals(Role.VIP)) {
+                    qrCode.setType("raw");
+                    qrCodeRepository.save(qrCode);
+                    getMessages().showUserPossibleCustomizationForForeground(user);
+
+                } else {
+                    sendMessageToUser(user, "you need VIP status for this");
+                }
                 break;
             case "\uD83D\uDFE5Red foreGround ":
                 qrCode.setForegroundColor(Color.RED);
@@ -271,10 +283,14 @@ public class QRCodeTgBot extends TelegramLongPollingBot {
                 getMessages().tellUserToWriteTextForQRCode(user);
                 break;
             case "\uD83D\uDD04 change link":
-                user.setWantToChangeLink(true);
-                user.setStepOfManagingCodes(1);
-                userRepository.save(user);
-                getMessages().sendMessageForChangingQRCodeLink(user);
+                if (user.getRole().equals(Role.VIP)) {
+                    user.setWantToChangeLink(true);
+                    user.setStepOfManagingCodes(1);
+                    userRepository.save(user);
+                    getMessages().sendMessageForChangingQRCodeLink(user);
+                } else {
+                    sendMessageToUser(user, "for changing link you need VIP status...");
+                }
                 break;
             case "🗑️Delete":
                 user.setWantToDelete(true);
@@ -386,6 +402,7 @@ public class QRCodeTgBot extends TelegramLongPollingBot {
                 new BotCommand("/showmyqrcodes", "show all your QR codes"),
                 new BotCommand("/profile", "open your profile"),
                 new BotCommand("/info", "information about this bot")
+//                new BotCommand("/buyvip", "Unlock VIP status")
 
 
         );

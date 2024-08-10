@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.ParseMode;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
+import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 
@@ -244,36 +245,6 @@ public class MessagesForUser {
         tgBot.sendMessageToUser(user, profileMessage);
     }
 
-    public void showUserQrCodes(TgUser user) {
-        List<QrCode> qrCodes = getQrCodeService().getQrCodesByUser(user);
-
-        if (qrCodes == null || qrCodes.isEmpty()) {
-            tgBot.sendMessageToUser(user, "🚫 *You have no QR codes yet!* \n" +
-                    "It looks like you haven't created any QR codes. What are you waiting for? Let’s get those creative juices flowing and make some magic! 🎨✨");
-            return;
-        }
-        tgBot.sendMessageToUser(user, "📋 *Your QR Codes*");
-
-        for (QrCode qrCode : qrCodes) {
-            if (!qrCode.getIsCreated()) {
-                continue;
-            }
-            String qrCodeMessage = "🔹 *QR Code ID:* `" + qrCode.getUuid() + "`\n" +
-                    "\uD83C\uDFA9 *Type:* " + qrCode.getType() + "\n" +
-                    "🔗 *Link:* [" + qrCode.getText() + "](" + qrCode.getFullLink() + ")\n" +
-                    "📅 *Created On:* " + (qrCode.getCreationDate() != null ? qrCode.getCreationDate().toLocalDate().toString() : "Unknown Date") + "\n" +
-                    "⏳ *Expiration Time:* " + (qrCode.getExpirationTime() != null ? qrCode.getExpirationTime().toLocalDate().toString() : "Never") + "\n" +
-                    "🔄 *Active:* " + (qrCode.getIsActive() != null && qrCode.getIsActive() ? "Yes" : "No") + "\n" +
-                    "🔍 *Scan Count:* " + (qrCode.getQrCodeScanCount() != null ? qrCode.getQrCodeScanCount() : 0) + "\n";
-
-            List<QrCodeVisitor> qrCodeVisitors = qrCodeVisitorRepository.findAllByVisitedQrCode(qrCode);
-            if (!qrCodeVisitors.isEmpty() && !qrCode.getType().equals("basic")) {
-                qrCodeMessage += "🔍 *Unique Scans:* " + qrCodeVisitors.size() + "\n";
-            }
-            tgBot.sendMessageToUser(user, qrCodeMessage);
-        }
-        sendMessageForManagingQrCodes(user);
-    }
 
     public void showUserQrCodeVisitors(TgUser user, List<QrCodeVisitor> qrCodeVisitors) {
 
@@ -357,6 +328,71 @@ public class MessagesForUser {
     }
 
     @SneakyThrows
+    public void showQrCodes(TgUser user) {
+        List<QrCode> qrCodes = getQrCodeService().getQrCodesByUser(user);
+
+        if (qrCodes == null || qrCodes.isEmpty()) {
+            tgBot.sendMessageToUser(user, "🚫 *You have no QR codes yet!* \n" +
+                    "It looks like you haven't created any QR codes. What are you waiting for? Let’s get those creative juices flowing and make some magic! 🎨✨");
+            return;
+        }
+
+        SendMessage sendMessage = new SendMessage();
+        sendMessage.setChatId(user.getChatId());
+        sendMessage.setParseMode(ParseMode.MARKDOWN);
+        InlineKeyboardMarkup markupForQrCode = tgBotUtils.createMarkupForQrCode(user);
+        sendMessage.setReplyMarkup(markupForQrCode);
+        sendMessage.setText("Choose QR code which you want to manage");
+        Message execute = tgBot.execute(sendMessage);
+
+        user.setStepOfManagingCodes(1);
+        user.setAdditionalMessageId(execute.getMessageId());
+        userRepository.save(user);
+    }
+
+    @SneakyThrows
+    public void showQrCode(TgUser user, QrCode qrCode) {
+        String qrCodeMessage =
+                "\uD83C\uDFA9 *Type:* " + qrCode.getType() + "\n" +
+                        "🔗 *Link:* [" + qrCode.getText() + "](" + qrCode.getFullLink() + ")\n" +
+                        "📅 *Created On:* " + (qrCode.getCreationDate() != null ? qrCode.getCreationDate().toLocalDate().toString() : "Unknown Date") + "\n" +
+                        "⏳ *Expiration Time:* " + (qrCode.getExpirationTime() != null ? qrCode.getExpirationTime().toLocalDate().toString() : "Never") + "\n" +
+                        "🔄 *Active:* " + (qrCode.getIsActive() != null && qrCode.getIsActive() ? "Yes" : "No") + "\n" +
+                        "🔍 *Scan Count:* " + (qrCode.getQrCodeScanCount() != null ? qrCode.getQrCodeScanCount() : 0) + "\n";
+        List<QrCodeVisitor> qrCodeVisitors = qrCodeVisitorRepository.findAllByVisitedQrCode(qrCode);
+        if (!qrCodeVisitors.isEmpty() && !qrCode.getType().equals("basic")) {
+            qrCodeMessage += "🔍 *Unique Scans:* " + qrCodeVisitors.size() + "\n";
+        }
+
+
+        EditMessageText message = new EditMessageText();
+        message.setChatId(user.getChatId());
+        message.setText(qrCodeMessage);
+        InlineKeyboardMarkup markup = tgBotUtils.createMarkupForManageQrCode(qrCode);
+        message.setReplyMarkup(markup);
+        message.setParseMode(ParseMode.MARKDOWN);
+        message.setMessageId(user.getAdditionalMessageId());
+        tgBot.execute(message);
+
+    }
+
+    @SneakyThrows
+    public void askUserToWriteTextForChangingLink(TgUser user, QrCode qrCode) {
+        EditMessageText message = new EditMessageText();
+        message.setChatId(user.getChatId());
+        message.setText("Current text: " + qrCode.getText() + " Please send a new link to replace it");
+        InlineKeyboardMarkup markup = tgBotUtils.createMarkup(List.of("⬅️ back"));
+        message.setReplyMarkup(markup);
+        message.setParseMode(ParseMode.MARKDOWN);
+        message.setMessageId(user.getAdditionalMessageId());
+        tgBot.execute(message);
+        user.setWantToChangeLink(true);
+        user.setQrCodeIdToChange(qrCode.getUuid());
+        user.setStepOfManagingCodes(2);
+        userRepository.save(user);
+    }
+
+    @SneakyThrows
     public void sendMessageForCheckingQrCodeVisitors(TgUser user) {
         Integer messageId = user.getAdditionalMessageId();
         if (messageId != null) {
@@ -417,4 +453,5 @@ public class MessagesForUser {
                         "If you have any issues, don't hesitate to reach out to our support team! \uD83D\uDCDE"
         );
     }
+
 }

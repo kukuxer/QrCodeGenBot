@@ -54,6 +54,19 @@ public class TgBotUtils {
                 rows.add(row);
             }
         }
+        markup.setKeyboard(rows);
+        return markup;
+    }
+
+    public InlineKeyboardMarkup createMarkupForManageQrCode(QrCode qrCode) {
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+
+
+        List<InlineKeyboardButton> row = getManagingButtons(qrCode);
+        rows.add(row);
+
+
         List<InlineKeyboardButton> backRow = getBackButtonRow();
         rows.add(backRow);
         markup.setKeyboard(rows);
@@ -69,6 +82,27 @@ public class TgBotUtils {
         return list;
     }
 
+    private List<InlineKeyboardButton> getManagingButtons(QrCode qrCode) {
+        InlineKeyboardButton changeLink = new InlineKeyboardButton();
+        changeLink.setText("\uD83D\uDD04 change link");
+        changeLink.setCallbackData("change " + qrCode.getUuid());
+
+        InlineKeyboardButton view = new InlineKeyboardButton();
+        view.setText("👁️Check visitors");
+        view.setCallbackData("view " + qrCode.getUuid());
+
+        InlineKeyboardButton delete = new InlineKeyboardButton();
+        delete.setText("🗑️Delete");
+        delete.setCallbackData("delete " + qrCode.getUuid());
+
+
+        List<InlineKeyboardButton> list = new ArrayList<>();
+        list.add(changeLink);
+        list.add(view);
+        list.add(delete);
+        return list;
+    }
+
     private List<InlineKeyboardButton> createButtonRowForQrCode(QrCode qrCode) {
         List<InlineKeyboardButton> row = new ArrayList<>();
         InlineKeyboardButton button = createButtonForQrCode(qrCode);
@@ -80,7 +114,7 @@ public class TgBotUtils {
     private InlineKeyboardButton createButtonForQrCode(QrCode qrCode) {
         InlineKeyboardButton button = new InlineKeyboardButton();
         button.setText(qrCode.getText());
-        button.setCallbackData(String.valueOf(qrCode.getUuid()));
+        button.setCallbackData("qr " + qrCode.getUuid());
         return button;
     }
 
@@ -122,4 +156,6 @@ public class TgBotUtils {
 
         return new Color(red, green, blue);
     }
+
+
 }

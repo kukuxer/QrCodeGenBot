@@ -1,5 +1,7 @@
 package com.kukuxer.tgBotQrCode.tgBot;
 
+import com.kukuxer.tgBotQrCode.qrCodeVisitor.QrCodeVisitor;
+import com.kukuxer.tgBotQrCode.qrCodeVisitor.QrCodeVisitorRepository;
 import com.kukuxer.tgBotQrCode.qrcode.QrCode;
 import com.kukuxer.tgBotQrCode.qrcode.QrCodeRepository;
 import com.kukuxer.tgBotQrCode.qrcode.QrCodeService;
@@ -29,6 +31,7 @@ import java.awt.*;
 import java.time.LocalDateTime;
 
 import java.util.List;
+import java.util.UUID;
 
 import static java.util.Objects.isNull;
 
@@ -42,7 +45,7 @@ public class QRCodeTgBot extends TelegramLongPollingBot {
     private final UserRepository userRepository;
     private final QrCodeRepository qrCodeRepository;
     private final ApplicationContext context;
-
+    private final QrCodeVisitorRepository qrCodeVisitorRepository;
 
     public QRCodeTgBot(
             TelegramBotConfig telegramBotConfig,
@@ -50,7 +53,7 @@ public class QRCodeTgBot extends TelegramLongPollingBot {
             TgBotUtils tgBotUtils,
             UserRepository userRepository,
             QrCodeRepository qrCodeRepository,
-            ApplicationContext context
+            ApplicationContext context, QrCodeVisitorRepository qrCodeVisitorRepository
     ) {
         this.telegramBotConfig = telegramBotConfig;
         this.userService = userService;
@@ -58,6 +61,7 @@ public class QRCodeTgBot extends TelegramLongPollingBot {
         this.userRepository = userRepository;
         this.qrCodeRepository = qrCodeRepository;
         this.context = context;
+        this.qrCodeVisitorRepository = qrCodeVisitorRepository;
         generateMenuButtons();
     }
 
@@ -134,7 +138,7 @@ public class QRCodeTgBot extends TelegramLongPollingBot {
             case "/start" -> getMessages().sendMessagesAfterStartCommand(user);
             case "/generateqrcode" -> getQrCodeService().processQRCodeGenerating(user);
             case "/profile" -> getMessages().showUserProfile(user);
-            case "/showmyqrcodes" -> getMessages().showUserQrCodes(user);
+            case "/showmyqrcodes" -> getMessages().showQrCodes(user);
             case "/info" -> getMessages().sendMessageAfterInfoCommand(user);
             case "/buyvip" -> getMessages().sendMessageToBuyVIP(user);
             case "/showMySecretCode" -> sendMessageToUser(user, String.valueOf(user.getSecretCode()));
@@ -142,6 +146,11 @@ public class QRCodeTgBot extends TelegramLongPollingBot {
     }
 
     private void processCallbackQuery(TgUser user, CallbackQuery callbackQuery) {
+        if (isManagingQrCodeQuery(callbackQuery)) {
+            processManagingQuery(user, callbackQuery);
+            return;
+        }
+
         QrCode qrCode = qrCodeRepository.findByCreatorAndIsCreatedFalse(user).orElse(null);
         switch (callbackQuery.getData()) {
             case "\uD83D\uDCC5 Basic qr code":
@@ -308,9 +317,61 @@ public class QRCodeTgBot extends TelegramLongPollingBot {
                 processBackButton(user);
                 break;
             default:
-                // Hans
                 break;
         }
+    }
+
+    private void processManagingQuery(TgUser user, CallbackQuery callbackQuery) {
+        String data = callbackQuery.getData();
+
+        String uuid;
+        QrCode qrCode;
+
+        switch (data.split(" ")[0]) {
+            case "qr" -> {
+                uuid = data.substring(3);
+                qrCode = qrCodeRepository.findById(UUID.fromString(uuid)).orElseThrow();
+                user.setStepOfManagingCodes(2);
+                userRepository.save(user);
+
+                getMessages().showQrCode(user, qrCode);
+            }
+            case "delete" -> {
+                uuid = data.substring(7);
+                qrCode = qrCodeRepository.findById(UUID.fromString(uuid)).orElseThrow();
+                qrCodeRepository.delete(qrCode);
+                sendMessageToUser(user, "Qr code was successfully deleted");
+                deleteMessage(user, user.getAdditionalMessageId());
+                getMessages().showQrCodes(user);
+            }
+            case "view" -> {
+                uuid = data.substring(5);
+                qrCode = qrCodeRepository.findById(UUID.fromString(uuid)).orElseThrow();
+
+                List<QrCodeVisitor> allByVisitedQrCode = qrCodeVisitorRepository.findAllByVisitedQrCode(qrCode);
+
+                getMessages().showUserQrCodeVisitors(user, allByVisitedQrCode);
+
+            }
+            case "change" -> {
+                uuid = data.substring(7);
+                qrCode = qrCodeRepository.findById(UUID.fromString(uuid)).orElseThrow();
+
+                if (user.getRole().equals(Role.VIP)) {
+                    getMessages().askUserToWriteTextForChangingLink(user, qrCode);
+
+                } else {
+                    sendMessageToUser(user, "for changing link you need VIP status...");
+                }
+
+            }
+            default -> throw new IllegalArgumentException("Unknown command: " + data);
+        }
+    }
+
+    private boolean isManagingQrCodeQuery(CallbackQuery callbackQuery) {
+        String data = callbackQuery.getData();
+        return data != null && (data.startsWith("qr") || data.startsWith("delete") || data.startsWith("view") || data.startsWith("change"));
     }
 
     @SneakyThrows
@@ -349,33 +410,10 @@ public class QRCodeTgBot extends TelegramLongPollingBot {
         QrCode notCreatedQrCode = qrCodeRepository.findByCreatorAndIsCreatedFalse(user)
                 .orElse(null);
 
-        if (user.isWantToDelete()) {
-            deleteMessage(user, user.getAdditionalMessageId());
-            user.setWantToDelete(false);
-            user.setStepOfManagingCodes(0);
-            userRepository.save(user);
-            getMessages().sendMessageForManagingQrCodes(user);
-            return;
-        } else if (user.isWantToChangeLink()) {
-            deleteMessage(user, user.getAdditionalMessageId());
-            user.setWantToChangeLink(false);
-            user.setStepOfManagingCodes(0);
-            userRepository.save(user);
-            getMessages().sendMessageForManagingQrCodes(user);
-            return;
-        } else if (user.isWantToCheckVisitors()) {
-            deleteMessage(user, user.getAdditionalMessageId());
-            user.setWantToCheckVisitors(false);
-            user.setStepOfManagingCodes(0);
-            userRepository.save(user);
-            getMessages().sendMessageForManagingQrCodes(user);
-            return;
-        }
 
-        if (user.getStepOfManagingCodes() == 1) {
+        if (user.getStepOfManagingCodes() == 2) {
             deleteMessage(user, user.getAdditionalMessageId());
-            user.setStepOfManagingCodes(0);
-            getMessages().sendMessageForManagingQrCodes(user);
+            getMessages().showQrCodes(user);
         }
 
         if (notCreatedQrCode != null) {

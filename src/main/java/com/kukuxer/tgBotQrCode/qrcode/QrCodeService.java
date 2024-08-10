@@ -171,7 +171,7 @@ public class QrCodeService {
             userRepository.save(user);
             qrCodeTgBot.sendMessageToUser(user, " Current text: " + qrCode.getText() + " Please provide new link or text for your qr code: ");
         } catch (Exception e) {
-            log.warn(e.getMessage());
+            log.warn(e.getMessage() +" while processChangeQrCodeLink");
         }
     }
 
@@ -184,6 +184,7 @@ public class QrCodeService {
             user.setQrCodeIdToChange(null);
             userRepository.save(user);
             qrCodeTgBot.sendMessageToUser(user, "Successfully changed to " + text);
+            qrCodeTgBot.getMessages().showQrCode(user, qrCode);
 
         } catch (Exception e) {
             qrCodeTgBot.sendMessageToUser(user, "Ooooopss something wrong");

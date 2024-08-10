@@ -239,7 +239,7 @@ public class MessagesForUser {
                 "\n" +
                 "👤 *Username:* " + (user.getTgUsername() != null ? "@" + user.getTgUsername() : "Unknown Adventurer \uD83E\uDDD0") + "\n" +
                 "🎭 *Role:* " + (user.getRole() != null ? user.getRole().name() : "Mystery Role \uD83D\uDC40") + "\n" +
-                "🆔 *Telegram User ID:* " + (user.getTelegramUserId() != null ? user.getTelegramUserId() : "Not Available \uD83D\uDE36") + "\n" +
+                "🆔 *Telegram User ID:* " + (user.getTelegramUserId() != null ? "`" + user.getChatId() + "`" : "Not Available \uD83D\uDE36") + "\n" +
                 "\n";
 
         tgBot.sendMessageToUser(user, profileMessage);
@@ -447,7 +447,7 @@ public class MessagesForUser {
         tgBot.sendMessageToUser(user,
                 "\uD83D\uDCB3 *How to Buy VIP:*\n" +
                         "To upgrade to VIP, with *Monobank*: simply send *5 гривен* with the comment of your * Telegram user ID*, which you can find in your profile.\n\n" +
-                        "Your ID: `" + user.getId() + "`\n\n" +
+                        "Your ID: `" + user.getChatId() + "`\n\n" +
                         "\uD83D\uDC41 *Note:* After sending the payment, your account will be upgraded automatically within a few minutes.\n" +
                         "With *any other bank*: simply write to support 'I want to get VIP' and you will receive a response within one business day.\n" +
                         "If you have any issues, don't hesitate to reach out to our support team! \uD83D\uDCDE"

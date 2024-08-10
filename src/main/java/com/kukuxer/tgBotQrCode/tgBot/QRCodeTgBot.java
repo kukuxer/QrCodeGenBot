@@ -439,10 +439,8 @@ public class QRCodeTgBot extends TelegramLongPollingBot {
                 new BotCommand("/generateqrcode", "create your QR code"),
                 new BotCommand("/showmyqrcodes", "show all your QR codes"),
                 new BotCommand("/profile", "open your profile"),
-                new BotCommand("/info", "information about this bot")
-//                new BotCommand("/buyvip", "Unlock VIP status")
-
-
+                new BotCommand("/info", "information about this bot"),
+                new BotCommand("/buyvip", "Unlock VIP status")
         );
         this.execute(
                 new SetMyCommands(

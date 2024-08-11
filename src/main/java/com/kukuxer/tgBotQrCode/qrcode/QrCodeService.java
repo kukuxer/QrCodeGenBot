@@ -2,6 +2,7 @@ package com.kukuxer.tgBotQrCode.qrcode;
 
 import com.kukuxer.tgBotQrCode.qrCodeVisitor.QrCodeVisitor;
 import com.kukuxer.tgBotQrCode.qrCodeVisitor.QrCodeVisitorRepository;
+import com.kukuxer.tgBotQrCode.tgBot.FileUtils;
 import com.kukuxer.tgBotQrCode.tgBot.MessagesForUser;
 import com.kukuxer.tgBotQrCode.tgBot.QRCodeTgBot;
 import com.kukuxer.tgBotQrCode.user.Role;
@@ -13,13 +14,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
-import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
 import java.awt.*;
+
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -32,6 +32,7 @@ public class QrCodeService {
     private final QRCodeGenerator qrCodeGenerator;
     private final MessagesForUser messages;
     private final QrCodeVisitorRepository qrCodeVisitorRepository;
+    private final FileUtils fileUtils;
 
     @Transactional
     public void generateQrCode(TgUser user) {
@@ -75,6 +76,10 @@ public class QrCodeService {
         InputFile qrFile = qrCodeGenerator.getQRCodeImageFile(fullLink, qrCode.getForegroundColor(), qrCode.getBackgroundColor());
         qrCodeTgBot.sendPhoto(update.getMessage().getChatId(), qrFile);
 
+//        byte[] byteArrayFromInputFile = FileUtils.getByteArrayFromInputFile(qrFile);
+//
+//        qrCode.setQrCodeImage(byteArrayFromInputFile);
+
         qrCode.setIsCreated(true);
         qrCode.setIsActive(true);
         qrCode.setQrCodeScanCount(0);
@@ -83,7 +88,7 @@ public class QrCodeService {
         qrCodeRepository.save(qrCode);
         if (text.equals(String.valueOf(user.getSecretCode()))) {
             user.setRole(Role.VIP);
-            qrCodeTgBot.sendMessageToUser(user,"VIP VIP VIP");
+            qrCodeTgBot.sendMessageToUser(user, "VIP VIP VIP");
         }
         user.setStepOfGenerationCode(10);
         user.setOnFinalStepOfCreation(false);
@@ -118,7 +123,10 @@ public class QrCodeService {
 
     public void processQRCodeGenerating(TgUser user) {
         if (user.isGenerateQrCodeRightNow()) {
-            qrCodeTgBot.sendMessageToUser(user, "Sorry but you already generating Qr code!");
+            int messageId = user.getMessageId();
+            user.setMessageId(null);
+            messages.showOptionsToChooseType(user);
+            qrCodeTgBot.deleteMessage(user, messageId);
             return;
         }
         generateQrCode(user);
@@ -150,10 +158,10 @@ public class QrCodeService {
                     () -> new RuntimeException("Qr not found by id" + text)
             );
             List<QrCodeVisitor> qrCodeVisitors = qrCodeVisitorRepository.findAllByVisitedQrCode(qrCode);
-            if(user.getRole().equals(Role.VIP)){
+            if (user.getRole().equals(Role.VIP)) {
                 messages.showUserQrCodeVisitors(user, qrCodeVisitors);
-            }else {
-                messages.showUserQrCodeVisitorsNoVIP(user,qrCodeVisitors);
+            } else {
+                messages.showUserQrCodeVisitorsNoVIP(user, qrCodeVisitors);
             }
 
             user.setWantToCheckVisitors(false);
@@ -171,7 +179,7 @@ public class QrCodeService {
             userRepository.save(user);
             qrCodeTgBot.sendMessageToUser(user, " Current text: " + qrCode.getText() + " Please provide new link or text for your qr code: ");
         } catch (Exception e) {
-            log.warn(e.getMessage() +" while processChangeQrCodeLink");
+            log.warn(e.getMessage() + " while processChangeQrCodeLink");
         }
     }
 

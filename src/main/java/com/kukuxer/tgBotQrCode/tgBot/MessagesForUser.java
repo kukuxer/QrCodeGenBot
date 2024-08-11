@@ -10,13 +10,18 @@ import com.kukuxer.tgBotQrCode.user.UserRepository;
 import lombok.SneakyThrows;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import org.telegram.telegrambots.meta.api.methods.ParseMode;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
+import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 
+import java.io.ByteArrayInputStream;
+import java.sql.Blob;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -207,6 +212,16 @@ public class MessagesForUser {
         tgBot.sendMessageToUser(user, "ℹ️ *QR Code Types and Features*");
         tgBot.sendMessageToUser(user,
                 """
+                        \uD83D\uDCB0 *Why Go VIP?*
+                                        
+                        - \uD83D\uDD25 **Unlimited QR Codes**: Create as many QR codes as you need without any limits.
+                        - \uD83C\uDF10 **Permanent Links**: Your QR codes never expire. Perfect for long-term projects or businesses.
+                        - \uD83D\uDCCA **Advanced Analytics**: Get deeper insights into who scans your codes, including detailed IP tracking, city, and more.
+                        🇺🇦 *Support Ukraine:* All proceeds from VIP purchases will be transferred directly to the 🇺🇦 Armed Forces of Ukraine 🇺🇦
+                        """
+        );
+        tgBot.sendMessageToUser(user,
+                """
                         *Basic QR Code* \uD83D\uDD11
                         - Works for 2 weeks, after which it expires. ⏳
                         - Only default or random colors are available for customization. 🎨
@@ -283,18 +298,18 @@ public class MessagesForUser {
         }
     }
 
-    @SneakyThrows
-    public void sendMessageForManagingQrCodes(TgUser user) {
-        SendMessage message = new SendMessage();
-        message.setChatId(user.getChatId());
-        message.setText("If you want to change the link, delete, view, or get information about who visited your QR code, you can use the following buttons:\n"
-        );
-        InlineKeyboardMarkup markup = tgBotUtils.createMarkup(List.of("\uD83D\uDD04 change link", "🗑️Delete", "👁️Check visitors"));
-        message.setReplyMarkup(markup);
-        Integer messageId = tgBot.execute(message).getMessageId();
-        user.setAdditionalMessageId(messageId);
-        userRepository.save(user);
-    }
+//    @SneakyThrows
+//    public void sendMessageForManagingQrCodes(TgUser user) {
+//        SendMessage message = new SendMessage();
+//        message.setChatId(user.getChatId());
+//        message.setText("If you want to change the link, delete, view, or get information about who visited your QR code, you can use the following buttons:\n"
+//        );
+//        InlineKeyboardMarkup markup = tgBotUtils.createMarkup(List.of("\uD83D\uDD04 change link", "🗑️Delete", "👁️Check visitors"));
+//        message.setReplyMarkup(markup);
+//        Integer messageId = tgBot.execute(message).getMessageId();
+//        user.setAdditionalMessageId(messageId);
+//        userRepository.save(user);
+//    }
 
     @SneakyThrows
     public void sendMessageForDeletingQRCode(TgUser user) {
@@ -328,6 +343,7 @@ public class MessagesForUser {
     }
 
     @SneakyThrows
+    @Transactional
     public void showQrCodes(TgUser user) {
         List<QrCode> qrCodes = getQrCodeService().getQrCodesByUser(user);
 
@@ -431,27 +447,23 @@ public class MessagesForUser {
     }
 
     public void sendMessageToBuyVIP(TgUser user) {
-        tgBot.sendMessageToUser(user, "\uD83D\uDCB8 *Upgrade to VIP!*");
 
-        tgBot.sendMessageToUser(user,
-                """
-                        \uD83D\uDCB0 *Why Go VIP?*
-                                        
-                        - \uD83D\uDD25 **Unlimited QR Codes**: Create as many QR codes as you need without any limits.
-                        - \uD83C\uDF10 **Permanent Links**: Your QR codes never expire. Perfect for long-term projects or businesses.
-                        - \uD83D\uDCCA **Advanced Analytics**: Get deeper insights into who scans your codes, including detailed IP tracking, city, and more.
-                        - \uD83D\uDD35 **Priority Support**: Enjoy faster responses and priority handling for any issues you may encounter.
-                        """
-        );
 
         tgBot.sendMessageToUser(user,
                 "\uD83D\uDCB3 *How to Buy VIP:*\n" +
-                        "To upgrade to VIP, with *Monobank*: simply send *5 гривен* with the comment of your * Telegram user ID*, which you can find in your profile.\n\n" +
-                        "Your ID: `" + user.getChatId() + "`\n\n" +
-                        "\uD83D\uDC41 *Note:* After sending the payment, your account will be upgraded automatically within a few minutes.\n" +
-                        "With *any other bank*: simply write to support 'I want to get VIP' and you will receive a response within one business day.\n" +
-                        "If you have any issues, don't hesitate to reach out to our support team! \uD83D\uDCDE"
+                        "To upgrade to VIP, you have the following options:\n\n" +
+
+                        "\uD83D\uDCB8 *With Monobank:*\n" +
+                        "[4441114469089609](https://send.monobank.ua/4HjMRc3A73)" +
+                        "- Simply send any amount you wish to donate with the comment of your *Telegram user ID*. You can find your ID in your profile or here.\n \n" +
+                        "Your ID: `" + user.getChatId() + "`\n \n" +
+                        "- Your account will be upgraded automatically within one minute after the payment is received.\n\n" +
+
+                        "\uD83D\uDCB8 *With Any Other Bank:*\n" +
+                        "- Simply write to any of admins(in descriptions) with the message 'I want to get VIP'.\n" +
+                        "- You will receive a response within one business day with further instructions.\n\n"
         );
+
     }
 
 }

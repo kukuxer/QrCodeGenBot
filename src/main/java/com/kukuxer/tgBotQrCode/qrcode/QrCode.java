@@ -47,6 +47,8 @@ public class QrCode {
     @OneToMany(cascade = CascadeType.REMOVE)
     @JoinColumn(name = "qr_code_visitor_id")
     List<QrCodeVisitor> qrCodeVisitors;
+    @Lob
+    byte[] qrCodeImage;
 
     public void setForegroundColor(Color color) {
         this.foregroundColor = color != null ? "#" + Integer.toHexString(color.getRGB()).substring(2) : null;

@@ -136,6 +136,7 @@ public class TgBotUtils {
     public boolean isCommand(Update update) {
         List<String> listOfCommands = List.of(
                 "/generateqrcode",
+                "/start",
                 "/showmyqrcodes",
                 "/profile",
                 "/info",

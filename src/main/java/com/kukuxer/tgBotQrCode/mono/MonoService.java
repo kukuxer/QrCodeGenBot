@@ -9,6 +9,7 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -38,7 +39,7 @@ public class MonoService {
                 MonoAccount.class
         );
     }
-
+    @Scheduled(fixedRate = 60000)
     public ResponseEntity<List<Transaction>> getTransactions() {
         HttpEntity<String> entity = getStringHttpEntity();
 

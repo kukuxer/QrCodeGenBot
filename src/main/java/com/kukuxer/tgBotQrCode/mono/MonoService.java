@@ -42,7 +42,7 @@ public class MonoService {
     public ResponseEntity<List<Transaction>> getTransactions() {
         HttpEntity<String> entity = getStringHttpEntity();
 
-        long time = LocalDateTime.now().toEpochSecond(ZoneOffset.UTC)-2592000;
+        long time = LocalDateTime.now().toEpochSecond(ZoneOffset.UTC) - 2592000;
         ResponseEntity<List<Transaction>> response = restTemplate.exchange(
                 "https://api.monobank.ua/personal/statement/CLZtIPW9zHvyXBJG8xfPZg/" + time,
                 HttpMethod.GET,
@@ -51,30 +51,30 @@ public class MonoService {
                 }
         );
         List<Transaction> transactions = response.getBody();
-        Transaction transaction = transactions.get(0);
+//        Transaction transaction = transactions.get(0);
         List<TgUser> users = userRepository.findAll();
         transactions.forEach(t -> {
             setVips(t, users);
         });
         userRepository.saveAll(users);
-        String comment = transaction.getComment();
-        TgUser tgUser = userRepository.findByChatId(
-                Long.parseLong(comment)
-        ).orElseThrow(
-                () -> new RuntimeException("User with telegram id: " + comment + " wasn't found.")
-        );
-        long amount = transaction.getAmount();
-        if(amount >499L) {
-            setVip(tgUser);
-        }else{
-            long fullM = amount/100;
-            long notFullM = amount%100;
-            qrCodeTgBot.sendMessageToUser(
-                    tgUser,
-                    "Bro, you've sent insufficient amount of money: "+fullM+"UAH"+notFullM+"kop."+", but u got VIP anyway"+
-                         "You owe to us: "+(500L-amount)
-            );
-        }
+//        String comment = transaction.getComment();
+//        TgUser tgUser = userRepository.findByChatId(
+//                Long.parseLong(comment)
+//        ).orElseThrow(
+//                () -> new RuntimeException("User with telegram id: " + comment + " wasn't found.")
+//        );
+//        long amount = transaction.getAmount();
+//        if (amount > 499L) {
+//            setVip(tgUser);
+//        } else {
+//            long fullM = amount / 100;
+//            long notFullM = amount % 100;
+//            qrCodeTgBot.sendMessageToUser(
+//                    tgUser,
+//                    "Bro, you've sent insufficient amount of money: " + fullM + "UAH" + notFullM + "kop." + ", but u got VIP anyway" +
+//                            "You owe to us: " + (500L - amount)
+//            );
+//        }
         return response;
     }
 
@@ -92,16 +92,29 @@ public class MonoService {
         qrCodeTgBot.sendMessageToUser(tgUser, "VIP VIP VIP");
     }
 
-    private static void setVips(Transaction t, List<TgUser> users) {
+    private void setVips(Transaction t, List<TgUser> users) {
         String comment = t.getComment();
+        long amount = t.getAmount();
         try {
             Long userId = Long.parseLong(comment);
-            users.forEach(u -> {
-                if(u.getId().equals(userId) && u.getRole().equals(Role.USER)){
-                    u.setRole(Role.VIP);
-                }
-            });
-        }catch(Exception e){
+            users.forEach(
+                    u -> {
+                        if(t.getAmount()>499L) {
+                            if (u.getId().equals(userId) && u.getRole().equals(Role.USER)) {
+                                u.setRole(Role.VIP);
+                            }
+                        }else{
+                            long fullM = amount / 100;
+                            long notFullM = amount % 100;
+                            qrCodeTgBot.sendMessageToUser(
+                                    u,
+                                    "Bro, you've sent insufficient amount of money: " + fullM + "UAH" + notFullM + "kop." + ", but u got VIP anyway" +
+                                            "You owe to us: " + (500L - amount)
+                            );
+                        }
+                    }
+            );
+        } catch (Exception e) {
         }
     }
 
